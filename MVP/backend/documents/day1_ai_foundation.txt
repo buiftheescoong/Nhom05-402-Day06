@@ -1,0 +1,5 @@
+Generative AI (Trí tuệ nhân tạo tạo sinh) là tập hợp các mô hình trí tuệ nhân tạo có khả năng tạo ra nội dung mới như văn bản, hình ảnh, âm thanh, hay mã nguồn thay vì chỉ phân loại hoặc phân tích các dữ liệu có sẵn.
+
+Large Language Models (LLM - Mô hình ngôn ngữ lớn) là một phân nhánh đặc biệt của Generative AI chuyên xử lý và tạo ra văn bản. Kiến trúc chủ đạo của các LLM hiện đại là Transformer, được giới thiệu trong bài báo "Attention Is All You Need" năm 2017.
+
+Cơ chế cốt lõi của Transformer là "Self-Attention", cho phép mô hình học được mối quan hệ ngữ cảnh giữa các từ dù chúng nằm cách xa nhau trong câu. Nhờ điều kiện này, LLM có thể hiểu ngữ cảnh rất sâu và tạo ra các câu văn mạch lạc, mang xu hướng tự nhiên giống con người. Các mô hình như GPT-4, Llama 3 hay Gemini đều được phát triển dựa trên biến thể của cấu trúc Transformer này.

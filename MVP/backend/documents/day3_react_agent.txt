@@ -1,0 +1,9 @@
+Kiến trúc ReAct (Reasoning and Acting) là một design pattern quan trọng trong việc xây dựng LLM Agent. Thay vì chỉ đưa ra câu trả lời ngay lập tức, ReAct buộc mô hình phải suy nghĩ (Reasoning) trước khi hành động (Acting).
+
+Agent Loop của ReAct hoạt động theo chuỗi lặp lại như sau:
+- Thought (Suy nghĩ): Mô hình phân tích câu hỏi của người dùng và quyết định bước tiếp theo cần phải làm gì.
+- Action (Hành động): Mô hình quyết định gọi một công cụ cụ thể (Tool/Function) cùng với tham số truyền vào tương ứng. (Ví dụ: Web Search, Calculator).
+- Observation (Quan sát trực tiếp): Hệ thống thực thi công cụ và trả lại kết quả (Observation) cho LLM.
+- Tiếp tục vòng lặp (Thought -> Action -> Obs) cho đến khi LLM tự nhận định rằng mình đã có đủ thông tin để trả lời câu hỏi gốc.
+
+Mô hình này giúp Agent có khả năng giải quyết các công việc đa bước, cũng như sửa lỗi khi sử dụng sai công cụ. Sức mạnh của ReAct Agent phụ thuộc nhiều vào Prompt định hướng và sức mạnh logic của base LLM đang sử dụng.

@@ -1,0 +1,9 @@
+Quy trình thiết kế lấy con người làm trung tâm (HCD - Human-Centered Design) là phương pháp tiếp cận thiết kế giải quyết vấn đề bằng cách hiểu sâu sắc nhu cầu của người dùng.
+
+Theo mô hình 4 bước lặp lại (dựa trên Don Norman):
+1. Observation (Quan sát): Đây là bước đi thực tế để hiếu những khó khăn (pain points) thực sự từ người dùng thông qua các tình huống thực tế mà họ đang gặp phải. 
+2. Ideation (Tạo ra ý tưởng): Nghiên cứu và sáng tạo ra nhiều ý tưởng, không bị rào cản hạn chế. Tránh vội vàng phê bình ý tưởng để kích thích sự sáng tạo.
+3. Prototype (Tạo mẫu thử): Tạo ra các nguyên mẫu với chi phí thấp (low stakes) dành cho các giải pháp tiềm năng. Mục tiêu là để thử nghiệm xem ý tưởng có khả thi hay không một cách nhanh nhất trước khi bắt đầu lập trình/xây dựng hoàn chỉnh.
+4. Test (Kiểm tra): Đưa prototype cho người dùng thật tương tác và quan sát xem họ dùng thế nào để thu thập phản hồi.
+
+Việc chọn đúng bài toán (Define the problem) là bước quan trọng nhất trước khi áp dụng AI. Một sản phẩm AI tuyệt vời giải quyết sai bài toán cũng trở nên vô dụng.
