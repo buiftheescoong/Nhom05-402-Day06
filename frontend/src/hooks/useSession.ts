@@ -27,8 +27,8 @@ interface SessionStore {
   setSession: (s: Session) => void;
   setStudent: (id: string, name: string) => void;
   loadDocuments: (sessionId: string) => Promise<void>;
-  generateSummary: (sessionId: string, docId?: string) => Promise<void>;
-  generateQuiz: (sessionId: string, opts?: any) => Promise<void>;
+  generateSummary: (sessionId: string, docId?: string, refresh?: boolean) => Promise<void>;
+  generateQuiz: (sessionId: string, opts?: any, refresh?: boolean) => Promise<void>;
   sendChat: (sessionId: string, message: string) => Promise<void>;
   loadChatHistory: (sessionId: string) => Promise<void>;
   setActivePanel: (panel: "summary" | "quiz" | null) => void;
@@ -65,28 +65,28 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     }
   },
 
-  generateSummary: async (sessionId, docId) => {
+  generateSummary: async (sessionId, docId, refresh = false) => {
     set((s) => ({
       loading: { ...s.loading, summary: true },
       activePanel: "summary",
     }));
     try {
       const { studentId } = get();
-      const result = await api.summary.generate(sessionId, studentId || undefined, docId);
+      const result = await api.summary.generate(sessionId, studentId || undefined, docId, "full", refresh);
       set({ summary: result });
     } finally {
       set((s) => ({ loading: { ...s.loading, summary: false } }));
     }
   },
 
-  generateQuiz: async (sessionId, opts) => {
+  generateQuiz: async (sessionId, opts, refresh = false) => {
     set((s) => ({
       loading: { ...s.loading, quiz: true },
       activePanel: "quiz",
     }));
     try {
       const { studentId } = get();
-      const result = await api.quiz.generate(sessionId, studentId || undefined, opts);
+      const result = await api.quiz.generate(sessionId, studentId || undefined, opts, refresh);
       set({ quiz: result });
     } finally {
       set((s) => ({ loading: { ...s.loading, quiz: false } }));

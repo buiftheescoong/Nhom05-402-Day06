@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session as DBSession
 
 from app.models.database import get_db, Summary
@@ -9,7 +9,32 @@ router = APIRouter()
 
 
 @router.post("/generate", response_model=SummaryResponse)
-async def create_summary(body: SummaryRequest, db: DBSession = Depends(get_db)):
+async def create_summary(
+    body: SummaryRequest,
+    refresh: bool = Query(False, description="Bỏ qua cache, gọi lại AI để tạo tóm tắt mới"),
+    db: DBSession = Depends(get_db),
+):
+    # --- Cache lookup: tìm summary đã lưu cho cùng (session_id, document_id, scope) ---
+    if not refresh:
+        query = db.query(Summary).filter(
+            Summary.session_id == body.session_id,
+            Summary.scope == body.scope,
+        )
+        if body.document_id:
+            query = query.filter(Summary.document_id == body.document_id)
+        cached = query.order_by(Summary.created_at.desc()).first()
+
+        if cached:
+            return SummaryResponse(
+                id=cached.id,
+                content=cached.content,
+                key_points=cached.key_points,
+                confidence=cached.confidence,
+                scope=cached.scope,
+                created_at=cached.created_at,
+            )
+
+    # --- Cache miss hoặc refresh=true: gọi AI ---
     result = await generate_summary(
         session_id=body.session_id,
         document_id=body.document_id,
@@ -37,3 +62,4 @@ async def create_summary(body: SummaryRequest, db: DBSession = Depends(get_db)):
         scope=summary.scope,
         created_at=summary.created_at,
     )
+
