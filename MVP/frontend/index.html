@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VinUni LMS - Document Viewer</title>
+    <!-- Modern Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Markdown Parser -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- VinUni Header Navbar -->
+    <header class="lms-header">
+        <div class="logo">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13h-13L12 6.5z"/></svg>
+            <span>VINUNIVERSITY</span>
+        </div>
+        <div class="user-menu">
+            <button class="sign-out-btn">Sign out</button>
+        </div>
+    </header>
+
+    <div class="app-container">
+        <!-- 1. Left Sidebar: Course Navigation -->
+        <aside class="lms-sidebar">
+            <div class="course-title">
+                <a href="#">&larr; Back to course page</a>
+                <h2>AI.20K - Cohort 1</h2>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: 57%"></div>
+                </div>
+                <div class="progress-text">57%</div>
+            </div>
+
+            <nav class="course-modules" id="documentList">
+                <!-- Dynamically loaded documents here -->
+            </nav>
+        </aside>
+
+        <!-- 2. Middle: Document Viewer -->
+        <main class="lms-viewer">
+            <div class="viewer-header">
+                <span class="nav-arrow">&lt; previous</span>
+                <span class="nav-arrow">next &gt;</span>
+            </div>
+            <div class="viewer-content">
+                <h1 id="viewerTitle">Vui lòng chọn bài giảng bên trái</h1>
+                <div id="viewerText" class="document-text">
+                    Nội dung bài giảng sẽ hiển thị tại đây...
+                </div>
+            </div>
+        </main>
+
+        <!-- 3. Right: AI Tutor Panel -->
+        <aside class="ai-panel glass-panel">
+            <div class="ai-header">
+                <div class="brand">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"/><path d="M12 12 21 7"/></svg>
+                    <span>AI Tutor Copilot</span>
+                </div>
+            </div>
+
+            <header class="top-nav">
+                <nav class="tabs">
+                    <button class="tab-btn active" data-target="tab-summary">Tóm Lược</button>
+                    <button class="tab-btn" data-target="tab-quiz">Quiz</button>
+                    <button class="tab-btn" data-target="tab-chat">Chat</button>
+                </nav>
+            </header>
+
+            <div class="content-body">
+                <!-- Tóm tắt Tab -->
+                <section id="tab-summary" class="tab-content active">
+                    <button id="btnSummarize" class="primary-btn full-width">
+                        <span class="btn-text">Bắt đầu tóm tắt bài này</span>
+                        <div class="loader hidden"></div>
+                    </button>
+                    <div id="summaryResult" class="result-box markdown-body">
+                        <div class="empty-state">
+                            <p>Chọn bài giảng và ấn tóm tắt.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Quiz Tab -->
+                <section id="tab-quiz" class="tab-content hidden">
+                    <div class="action-group">
+                        <select id="quizDifficulty" class="select-input">
+                            <option value="Cơ bản">Cơ bản</option>
+                            <option value="Nâng cao">Nâng cao</option>
+                        </select>
+                        <button id="btnQuiz" class="primary-btn">
+                            <span class="btn-text">Tạo đề nghiệm</span>
+                            <div class="loader hidden"></div>
+                        </button>
+                    </div>
+                    <div id="quizResult" class="result-box markdown-body">
+                         <div class="empty-state">
+                            <p>Tạo quiz tự luận dựa trên tài liệu để tự đánh giá.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Chat Tab -->
+                <section id="tab-chat" class="tab-content hidden">
+                    <div class="chat-container">
+                        <div id="chatHistory" class="chat-history">
+                            <div class="chat-msg ai-msg">
+                                <div class="msg-bubble">Bạn có thắc mắc gì về bài giảng này không? Hỏi mình nhé!</div>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chatInput" placeholder="Hỏi AI..." class="text-input">
+                            <button id="btnChat" class="primary-btn icon-btn">
+                                <span class="btn-text">&uarr;</span>
+                                <div class="loader hidden"></div>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </aside>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
