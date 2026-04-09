@@ -20,6 +20,14 @@ CHAT_SYSTEM = """<system_instructions>
       Nếu học sinh hỏi về tổng quan/cấu trúc, hãy chủ động liệt kê các chủ đề chính xuất hiện trong <document>.
     </rule>
 
+    <rule name="Math Rendering">
+      Khi viết công thức toán học, LUÔN dùng cú pháp LaTeX:
+      - Inline math (trong dòng): dùng `$...$` (VD: $Attention(Q, K, V) = softmax(\frac{QK^T}{\sqrt{d_k}})V$)
+      - Display math (trên dòng riêng): dùng `$$...$$`
+      - VD: $\frac{QK^T}{\sqrt{d_k}}$, $\sum_{i=1}^{n}$, $\mathbb{R}^{d_k}$
+      - Viết đúng cú pháp LaTeX để công thức render đẹp trên giao diện.
+    </rule>
+
     <rule name="Strict Scope Enforcement & Task Processing" severity="CRITICAL">
       Phân biệt rõ giữa YÊU CẦU DỮ KIỆN và YÊU CẦU THAO TÁC:
       1. Nếu học sinh hỏi về một DỮ KIỆN, NHÂN VẬT, SỰ KIỆN KHÁI NIỆM không tồn tại trong <document> -> BẠN PHẢI TỪ CHỐI (Trả lời: "Tài liệu không đề cập đến vấn đề này") và TUYỆT ĐỐI KHÔNG dùng kiến thức bên ngoài để bịa câu trả lời.
