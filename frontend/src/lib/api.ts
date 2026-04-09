@@ -167,7 +167,7 @@ export const api = {
       targetType: string,
       targetId: string,
       feedbackType: string,
-      userNote = ""
+      opts: { studentId?: string; category?: string; userNote?: string } = {}
     ) =>
       request<any>("/api/feedback", {
         method: "POST",
@@ -175,8 +175,26 @@ export const api = {
           target_type: targetType,
           target_id: targetId,
           feedback_type: feedbackType,
-          user_note: userNote,
+          student_id: opts.studentId,
+          category: opts.category || "",
+          user_note: opts.userNote || "",
         }),
       }),
+    check: (targetType: string, targetId: string, studentId: string) =>
+      request<{
+        has_like: boolean;
+        has_dislike: boolean;
+        has_report: boolean;
+        feedback_type: "like" | "dislike" | null;
+      }>(
+        `/api/feedback/check?target_type=${targetType}&target_id=${targetId}&student_id=${studentId}`
+      ),
+    stats: (targetType: string, targetId: string) =>
+      request<{
+        likes: number;
+        dislikes: number;
+        reports: number;
+        total: number;
+      }>(`/api/feedback/stats/${targetType}/${targetId}`),
   },
 };
