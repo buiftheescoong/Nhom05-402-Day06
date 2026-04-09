@@ -3,6 +3,9 @@
 import { User, Bot } from "lucide-react";
 import type { ChatMessage as ChatMessageType } from "@/types";
 import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 export function ChatMessage({ message }: { message: ChatMessageType }) {
@@ -19,17 +22,42 @@ export function ChatMessage({ message }: { message: ChatMessageType }) {
 
       <div className={`max-w-[80%] ${isUser ? "order-first" : ""}`}>
         <div
-          className={`rounded-2xl px-4 py-3 ${
-            isUser
-              ? "bg-blue-600 text-white rounded-br-md"
-              : "bg-stone-100 text-stone-800 rounded-bl-md"
-          }`}
+          className={`rounded-2xl px-4 py-3 ${isUser
+            ? "bg-blue-600 text-white rounded-br-md"
+            : "bg-stone-100 text-stone-800 rounded-bl-md"
+            }`}
         >
           {isUser ? (
             <p className="text-sm">{message.content}</p>
           ) : (
-            <div className="text-sm prose prose-sm prose-stone max-w-none">
-              <ReactMarkdown>{message.content}</ReactMarkdown>
+            <div className="text-sm prose prose-sm prose-stone max-w-none overflow-x-auto">
+              {/* Inline styles cho các KaTeX block dài — cho phép slide ngang */}
+              <style>{`
+                .katex-display {
+                  overflow-x: auto;
+                  overflow-y: hidden;
+                  max-width: 100%;
+                  padding: 4px 0;
+                }
+                .katex-display::-webkit-scrollbar {
+                  height: 4px;
+                }
+                .katex-display::-webkit-scrollbar-track {
+                  background: transparent;
+                }
+                .katex-display::-webkit-scrollbar-thumb {
+                  background: rgba(0,0,0,0.15);
+                  border-radius: 2px;
+                }
+                .katex-display::-webkit-scrollbar-thumb:hover {
+                  background: rgba(0,0,0,0.25);
+                }
+                .katex { font-size: 1em !important; }
+                .katex-display > .katex { font-size: 1em !important; }
+              `}</style>
+              <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                {message.content}
+              </ReactMarkdown>
             </div>
           )}
         </div>

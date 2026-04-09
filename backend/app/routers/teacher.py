@@ -1,12 +1,13 @@
 import os
 import uuid
 import logging
+import time
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session as DBSession
 
 from app.config import settings
-from app.models.database import get_db, Course, Session, Document, SessionLocal
+from app.models.database import get_db, Course, Session, Document, SessionLocal, Student, Enrollment, ChatMessage
 from app.models.schemas import (
     CourseCreate,
     CourseAuth,
@@ -15,6 +16,7 @@ from app.models.schemas import (
     SessionUpdate,
     SessionResponse,
     DocumentResponse,
+    StudentInfo,
 )
 from app.services.document_processor import extract_text, chunk_text
 from app.services.rag_service import add_document_chunks, delete_document_chunks
@@ -322,3 +324,43 @@ def delete_document(doc_id: str, db: DBSession = Depends(get_db)):
     db.delete(doc)
     db.commit()
     return {"ok": True}
+
+
+# --------------- Student Tracking ---------------
+
+@router.get("/courses/{course_id}/students", response_model=list[StudentInfo])
+def list_course_students(course_id: str, db: DBSession = Depends(get_db)):
+    """Lấy danh sách học sinh đã join lớp học."""
+    enrollments = (
+        db.query(Enrollment)
+        .join(Student)
+        .filter(Enrollment.course_id == course_id)
+        .all()
+    )
+    result = []
+    for enr in enrollments:
+        student = db.query(Student).filter(Student.id == enr.student_id).first()
+        if student:
+            # Check if student is currently active (has recent chat/activity in last 5 min)
+            last_active = (
+                db.query(ChatMessage)
+                .filter(ChatMessage.student_id == student.id)
+                .order_by(ChatMessage.created_at.desc())
+                .first()
+            )
+            is_active = False
+            if last_active:
+                now = time.time()
+                last_active_ts = last_active.created_at.timestamp()
+                is_active = (now - last_active_ts) < 300  # 5 minutes
+
+            result.append(
+                StudentInfo(
+                    id=student.id,
+                    name=student.name,
+                    created_at=student.created_at,
+                    is_active=is_active,
+                    last_active_at=last_active.created_at if last_active else None,
+                )
+            )
+    return result

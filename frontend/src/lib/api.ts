@@ -68,6 +68,8 @@ export const api = {
       request<any[]>(`/api/teacher/sessions/${sessionId}/documents`),
     deleteDocument: (docId: string) =>
       request<any>(`/api/teacher/documents/${docId}`, { method: "DELETE" }),
+    listStudents: (courseId: string) =>
+      request<any[]>(`/api/teacher/courses/${courseId}/students`),
   },
 
   // --------------- Student ---------------
@@ -181,7 +183,7 @@ export const api = {
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No reader");
       const decoder = new TextDecoder("utf-8");
-      
+
       let done = false;
       let finalSources = [];
       let fullContent = "";
@@ -193,14 +195,14 @@ export const api = {
           const lines = chunk.split('\n\n');
           for (const line of lines) {
             if (line.startsWith('data: ')) {
-               try {
-                   const data = JSON.parse(line.slice(6));
-                   if (data.content !== undefined) {
-                       fullContent += data.content;
-                       onChunk(fullContent);
-                   }
-                   if (data.sources) finalSources = data.sources;
-               } catch (e) {}
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.content !== undefined) {
+                  fullContent += data.content;
+                  onChunk(fullContent);
+                }
+                if (data.sources) finalSources = data.sources;
+              } catch (e) { }
             }
           }
         }

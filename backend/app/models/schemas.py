@@ -61,6 +61,11 @@ class StudentResponse(BaseModel):
     created_at: datetime
 
 
+class StudentInfo(StudentResponse):
+    is_active: bool = False
+    last_active_at: datetime | None = None
+
+
 class EnrollmentResponse(BaseModel):
     student_id: str
     student_name: str

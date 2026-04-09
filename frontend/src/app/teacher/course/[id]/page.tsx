@@ -67,7 +67,21 @@ export default function TeacherCoursePage() {
   const [copied, setCopied] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showStudents, setShowStudents] = useState(false);
+  const [students, setStudents] = useState<any[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Load students
+  useEffect(() => {
+    if (showStudents && courseId && students.length === 0) {
+      setLoadingStudents(true);
+      api.teacher
+        .listStudents(courseId)
+        .then((s) => setStudents(s))
+        .finally(() => setLoadingStudents(false));
+    }
+  }, [showStudents, courseId, students.length]);
 
   useEffect(() => {
     if (!courseId) return;
@@ -84,7 +98,7 @@ export default function TeacherCoursePage() {
   useEffect(() => {
     let interval: NodeJS.Timeout;
     const hasProcessingDocs = documents.some((d) => d.status === "processing");
-    
+
     if (selectedSessionId && hasProcessingDocs) {
       interval = setInterval(() => {
         // Fetch ngầm không làm hiển thị Loading che màn hình
@@ -93,7 +107,7 @@ export default function TeacherCoursePage() {
         });
       }, 2500);
     }
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -153,6 +167,21 @@ export default function TeacherCoursePage() {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const refreshStudents = async () => {
+    if (!courseId) return;
+    setLoadingStudents(true);
+    try {
+      const s = await api.teacher.listStudents(courseId);
+      setStudents(s);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
+  const toggleStudents = () => {
+    setShowStudents(!showStudents);
   };
 
   const selectedSession = sessions.find((s) => s.id === selectedSessionId);
@@ -271,11 +300,10 @@ export default function TeacherCoursePage() {
                   return (
                     <div key={session.id}>
                       <button
-                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group ${
-                          isSelected
-                            ? "bg-slate-700/80 text-white"
-                            : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
-                        }`}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-left transition-colors group ${isSelected
+                          ? "bg-slate-700/80 text-white"
+                          : "text-slate-300 hover:bg-slate-700/50 hover:text-white"
+                          }`}
                         onClick={() => handleSelectSession(session)}
                       >
                         {isExpanded ? (
@@ -338,8 +366,96 @@ export default function TeacherCoursePage() {
           </ScrollArea>
 
           {/* Footer */}
-          <div className="border-t border-slate-700 px-4 py-3">
-            <div className="flex items-center gap-2">
+          <div className="border-t border-slate-700">
+            {/* Student count bar — clickable to expand */}
+            <button
+              className="w-full flex items-center gap-2 px-4 py-2.5 hover:bg-slate-700/30 transition-colors"
+              onClick={toggleStudents}
+            >
+              <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-[11px] text-slate-300 font-medium">
+                  Học sinh đã tham gia
+                </p>
+                <p className="text-[10px] text-slate-500">
+                  {course?.student_count || 0} học sinh
+                </p>
+              </div>
+              {showStudents ? (
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              ) : (
+                <ChevronRight className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+              )}
+            </button>
+            {/* Students panel — expandable with scroll */}
+            {showStudents && (
+              <div className="border-t border-slate-700 bg-slate-900/50" style={{ maxHeight: "200px" }}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-700/50">
+                  <span className="text-[9px] text-slate-500 uppercase tracking-wider">
+                    Danh sách · {students.length} học sinh
+                  </span>
+                  <button
+                    className="text-[9px] text-blue-400 hover:text-blue-300"
+                    onClick={refreshStudents}
+                    disabled={loadingStudents}
+                  >
+                    {loadingStudents ? "Đang tải..." : "↻ Làm mới"}
+                  </button>
+                </div>
+
+                {/* Student list with vertical scroll */}
+                <ScrollArea className="overflow-y-auto" style={{ maxHeight: "160px" }}>
+                  {loadingStudents ? (
+                    <div className="flex items-center justify-center py-6">
+                      <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
+                    </div>
+                  ) : students.length === 0 ? (
+                    <div className="text-center py-6 px-4">
+                      <Users className="w-6 h-6 text-slate-600 mx-auto mb-2" />
+                      <p className="text-[10px] text-slate-500">Chưa có học sinh tham gia</p>
+                    </div>
+                  ) : (
+                    <div className="py-1 px-2 space-y-0.5">
+                      {students.map((student) => (
+                        <div
+                          key={student.id}
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-slate-700/30 transition-colors"
+                        >
+                          {/* Active indicator dot */}
+                          <div
+                            className={`w-2 h-2 rounded-full shrink-0 ${student.is_active ? "bg-green-400" : "bg-slate-600"
+                              }`}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[11px] text-slate-300 truncate">{student.name}</p>
+                            {student.last_active_at && (
+                              <p className="text-[9px] text-slate-500">
+                                Hoạt động: {new Date(student.last_active_at).toLocaleTimeString("vi-VN", {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </p>
+                            )}
+                          </div>
+                          {/* Status badge */}
+                          {student.is_active && (
+                            <Badge
+                              variant="default"
+                              className="text-[8px] px-1 py-0 bg-green-600 text-white shrink-0"
+                            >
+                              Online
+                            </Badge>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </ScrollArea>
+              </div>
+            )}
+            {/* Teacher info */}
+            <div className="flex items-center gap-2 px-4 py-2.5 border-t border-slate-700">
               <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center text-[10px] font-bold text-white">
                 GV
               </div>
@@ -349,6 +465,8 @@ export default function TeacherCoursePage() {
               </div>
             </div>
           </div>
+
+
         </div>
       ) : (
         <div className="w-12 bg-slate-800 flex flex-col items-center pt-3 shrink-0">
@@ -461,8 +579,8 @@ export default function TeacherCoursePage() {
                             {doc.status === "processing"
                               ? "Đang xử lý"
                               : doc.status === "ready"
-                              ? "Sẵn sàng"
-                              : doc.error_message || "Lỗi"}
+                                ? "Sẵn sàng"
+                                : doc.error_message || "Lỗi"}
                           </span>
                         </div>
                       </div>
