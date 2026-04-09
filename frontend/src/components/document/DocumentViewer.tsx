@@ -33,8 +33,8 @@ interface DocumentViewerProps {
 type ViewMode = "original" | "text";
 
 export function DocumentViewer({ sessionId }: DocumentViewerProps) {
-  const { documents, session } = useSessionStore();
-  const [selectedDoc, setSelectedDoc] = useState<DocumentSource | null>(null);
+  const { documents, session, selectedDocId, setSelectedDocId } = useSessionStore();
+  const selectedDoc = documents.find((d) => d.id === selectedDocId) ?? null;
   const [docContent, setDocContent] = useState<DocumentContent | null>(null);
   const [loadingContent, setLoadingContent] = useState(false);
   const [showOutline, setShowOutline] = useState(false);
@@ -43,14 +43,17 @@ export function DocumentViewer({ sessionId }: DocumentViewerProps) {
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setSelectedDoc(null);
+    setSelectedDocId(null);
     setDocContent(null);
     setDocxHtml("");
-  }, [sessionId]);
+  }, [sessionId, setSelectedDocId]);
 
   useEffect(() => {
-    if (documents.length > 0 && !selectedDoc) {
-      handleSelectDoc(documents[0]);
+    if (documents.length > 0 && !selectedDocId) {
+      const first = documents[0];
+      if (first.status === "ready") {
+        handleSelectDoc(first);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documents]);
@@ -79,7 +82,7 @@ export function DocumentViewer({ sessionId }: DocumentViewerProps) {
 
   const handleSelectDoc = async (doc: DocumentSource) => {
     if (doc.status !== "ready") return;
-    setSelectedDoc(doc);
+    setSelectedDocId(doc.id);
     setViewMode("original");
     setDocxHtml("");
     setLoadingContent(true);
