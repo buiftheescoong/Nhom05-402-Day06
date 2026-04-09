@@ -92,6 +92,8 @@ export const api = {
       request<any[]>(`/api/student/sessions/${sessionId}/documents`),
     getDocumentContent: (docId: string) =>
       request<any>(`/api/student/documents/${docId}/content`),
+    getDocumentFileUrl: (docId: string) =>
+      `${API_BASE}/api/student/documents/${docId}/file`,
   },
 
   // --------------- AI Features ---------------
@@ -156,6 +158,51 @@ export const api = {
           message,
         }),
       }),
+    sendStream: async (
+      sessionId: string,
+      message: string,
+      studentId: string | undefined,
+      onChunk: (chunk: string) => void
+    ) => {
+      const res = await fetch(`${API_BASE}/api/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          student_id: studentId,
+          message,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No reader");
+      const decoder = new TextDecoder("utf-8");
+      
+      let done = false;
+      let finalSources = [];
+      let fullContent = "";
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: !done });
+          const lines = chunk.split('\n\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+               try {
+                   const data = JSON.parse(line.slice(6));
+                   if (data.content !== undefined) {
+                       fullContent += data.content;
+                       onChunk(fullContent);
+                   }
+                   if (data.sources) finalSources = data.sources;
+               } catch (e) {}
+            }
+          }
+        }
+      }
+      return { content: fullContent, sources: finalSources };
+    },
     history: (sessionId: string, studentId?: string) =>
       request<any[]>(
         `/api/chat/history/${sessionId}${studentId ? `?student_id=${studentId}` : ""}`
@@ -167,7 +214,7 @@ export const api = {
       targetType: string,
       targetId: string,
       feedbackType: string,
-      userNote = ""
+      opts: { studentId?: string; category?: string; userNote?: string } = {}
     ) =>
       request<any>("/api/feedback", {
         method: "POST",
@@ -175,8 +222,26 @@ export const api = {
           target_type: targetType,
           target_id: targetId,
           feedback_type: feedbackType,
-          user_note: userNote,
+          student_id: opts.studentId,
+          category: opts.category || "",
+          user_note: opts.userNote || "",
         }),
       }),
+    check: (targetType: string, targetId: string, studentId: string) =>
+      request<{
+        has_like: boolean;
+        has_dislike: boolean;
+        has_report: boolean;
+        feedback_type: "like" | "dislike" | null;
+      }>(
+        `/api/feedback/check?target_type=${targetType}&target_id=${targetId}&student_id=${studentId}`
+      ),
+    stats: (targetType: string, targetId: string) =>
+      request<{
+        likes: number;
+        dislikes: number;
+        reports: number;
+        total: number;
+      }>(`/api/feedback/stats/${targetType}/${targetId}`),
   },
 };

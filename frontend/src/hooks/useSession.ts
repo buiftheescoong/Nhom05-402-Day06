@@ -94,7 +94,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   },
 
   sendChat: async (sessionId, message) => {
-    const { studentId } = get();
+    const { studentId, chatMessages } = get();
     const userMsg: ChatMessage = {
       id: `temp-${Date.now()}`,
       role: "user",
@@ -102,14 +102,44 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       sources: [],
       created_at: new Date().toISOString(),
     };
+    const aiTempId = `temp-ai-${Date.now()}`;
+    const aiMsg: ChatMessage = {
+      id: aiTempId,
+      role: "assistant",
+      content: "",
+      sources: [],
+      created_at: new Date().toISOString(),
+    };
+    
     set((s) => ({
-      chatMessages: [...s.chatMessages, userMsg],
+      chatMessages: [...s.chatMessages, userMsg, aiMsg],
       loading: { ...s.loading, chat: true },
     }));
+    
     try {
-      const aiMsg = await api.chat.send(sessionId, message, studentId || undefined);
+      const finalRes = await api.chat.sendStream(
+        sessionId,
+        message,
+        studentId || undefined,
+        (currentChunk) => {
+          set((s) => ({
+            chatMessages: s.chatMessages.map((msg) =>
+              msg.id === aiTempId ? { ...msg, content: currentChunk } : msg
+            ),
+          }));
+        }
+      );
+      
       set((s) => ({
-        chatMessages: [...s.chatMessages, aiMsg],
+        chatMessages: s.chatMessages.map((msg) =>
+           msg.id === aiTempId ? { ...msg, sources: finalRes.sources } : msg
+        ),
+      }));
+    } catch (e) {
+      set((s) => ({
+        chatMessages: s.chatMessages.map((msg) =>
+          msg.id === aiTempId ? { ...msg, content: "Đã có lỗi kết nối." } : msg
+        ),
       }));
     } finally {
       set((s) => ({ loading: { ...s.loading, chat: false } }));

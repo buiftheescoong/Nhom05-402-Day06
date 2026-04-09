@@ -80,6 +80,25 @@ export default function TeacherCoursePage() {
       .finally(() => setReady(true));
   }, [courseId, setCourse, loadSessions]);
 
+  // Auto-polling để cập nhật trạng thái "Đang xử lý" -> "Sẵn sàng"
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    const hasProcessingDocs = documents.some((d) => d.status === "processing");
+    
+    if (selectedSessionId && hasProcessingDocs) {
+      interval = setInterval(() => {
+        // Fetch ngầm không làm hiển thị Loading che màn hình
+        api.teacher.listDocuments(selectedSessionId).then((docs) => {
+          useTeacherStore.setState({ documents: docs });
+        });
+      }, 2500);
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [selectedSessionId, documents]);
+
   const handleCreateSession = async () => {
     if (!newSessionTitle.trim()) return;
     setCreatingSession(true);
