@@ -34,12 +34,15 @@ async def generate_quiz(
     )
 
     try:
+        logger.info("[Quiz Service] Bắt đầu gọi Router với scope '%s', độ dài context: %d ký tự", scope, len(content))
         result = await llm_router.generate_json(prompt, system=QUIZ_SYSTEM)
         if isinstance(result, dict):
+            num_q = len(result.get("questions", []))
+            logger.info("[Quiz Service] Tạo thành công %d câu hỏi.", num_q)
             result = result.get("questions", [])
         return result if isinstance(result, list) else []
     except Exception as e:
-        logger.error("Quiz generation failed: %s", e)
+        logger.error("[Quiz Service] Quiz generation failed: %s", e)
         return []
 
 

@@ -4,6 +4,7 @@ Nhiệm vụ: tạo câu hỏi tự luận ôn tập dựa trên nội dung tài
 Quy tắc:
 - Câu hỏi phải nằm trong nội dung tài liệu, KHÔNG được bịa
 - Trộn đều các mức: nhận biết, thông hiểu, vận dụng
+- QUAN TRỌNG: Viết CỰC KỲ NGẮN GỌN (Tối đa 2-3 câu mỗi ý)
 - Mỗi câu hỏi phải có đáp án mẫu và 3 cấp độ gợi ý (hint)
 - Hint cấp 1: gợi ý hướng suy nghĩ chung
 - Hint cấp 2: thu hẹp phạm vi, gợi ý cụ thể hơn

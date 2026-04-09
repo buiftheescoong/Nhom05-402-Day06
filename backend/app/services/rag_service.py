@@ -27,12 +27,24 @@ def get_openai_ef():
     )
 
 
+def get_embedding_function():
+    if settings.gemini_api_key:
+        return embedding_functions.GoogleGenerativeAiEmbeddingFunction(
+            api_key=settings.gemini_api_key
+        )
+    elif settings.openai_api_key:
+        return embedding_functions.OpenAIEmbeddingFunction(
+            api_key=settings.openai_api_key
+        )
+    return None
+
+
 def get_collection(session_id: str) -> chromadb.Collection:
     client = get_chroma_client()
     return client.get_or_create_collection(
         name=f"session_{session_id}",
         metadata={"hnsw:space": "cosine"},
-        embedding_function=get_openai_ef()
+        embedding_function=get_embedding_function(),
     )
 
 
