@@ -157,6 +157,7 @@ class HintResponse(BaseModel):
 class ChatRequest(BaseModel):
     session_id: str
     student_id: str | None = None
+    document_id: str | None = None
     message: str
 
 

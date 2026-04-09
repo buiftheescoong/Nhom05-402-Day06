@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session as DBSession
 
 from app.models.database import get_db, ChatMessage
 from app.models.schemas import ChatRequest, ChatResponse
-from app.services.chat_service import chat_with_documents
+from app.services.chat_service import chat_with_documents, chat_with_documents_stream
+from fastapi.responses import StreamingResponse
+import json
 
 router = APIRouter()
 
@@ -19,7 +21,7 @@ async def send_message(body: ChatRequest, db: DBSession = Depends(get_db)):
     db.add(user_msg)
     db.commit()
 
-    result = await chat_with_documents(body.session_id, body.message)
+    result = await chat_with_documents(body.session_id, body.message, body.document_id)
 
     ai_msg = ChatMessage(
         session_id=body.session_id,
@@ -59,3 +61,44 @@ def get_chat_history(session_id: str, student_id: str | None = None, db: DBSessi
         )
         for m in messages
     ]
+
+@router.post("/stream")
+async def send_message_stream(body: ChatRequest, db: DBSession = Depends(get_db)):
+    user_msg = ChatMessage(
+        session_id=body.session_id,
+        student_id=body.student_id,
+        role="user",
+        content=body.message,
+    )
+    db.add(user_msg)
+    db.commit()
+
+    async def event_generator():
+        full_content = ""
+        sources = []
+        async for sse_payload in chat_with_documents_stream(body.session_id, body.message, body.document_id):
+            yield sse_payload
+            
+            # Extract content to save to DB at the end
+            if "data: " in sse_payload:
+                try:
+                    data_dict = json.loads(sse_payload.split("data: ")[1])
+                    if "content" in data_dict:
+                        full_content += data_dict["content"]
+                    if "sources" in data_dict:
+                        sources = data_dict["sources"]
+                except Exception:
+                    pass
+        
+        # Save AI reply to DB
+        ai_msg = ChatMessage(
+            session_id=body.session_id,
+            student_id=body.student_id,
+            role="assistant",
+            content=full_content,
+            sources_json=sources,
+        )
+        db.add(ai_msg)
+        db.commit()
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

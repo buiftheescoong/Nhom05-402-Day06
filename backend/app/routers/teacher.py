@@ -2,11 +2,11 @@ import os
 import uuid
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks
 from sqlalchemy.orm import Session as DBSession
 
 from app.config import settings
-from app.models.database import get_db, Course, Session, Document
+from app.models.database import get_db, Course, Session, Document, SessionLocal
 from app.models.schemas import (
     CourseCreate,
     CourseAuth,
@@ -206,9 +206,38 @@ def delete_session(session_id: str, db: DBSession = Depends(get_db)):
 
 # --------------- Documents (Teacher upload) ---------------
 
+def process_document_task(session_id: str, file_id: str, save_path: str, ext: str):
+    """Background task to extract text, chunk and add to vector store."""
+    db = SessionLocal()
+    try:
+        doc = db.query(Document).filter(Document.id == file_id).first()
+        if not doc:
+            return
+
+        text, outline = extract_text(save_path, ext)
+        chunks = chunk_text(text)
+        add_document_chunks(session_id, file_id, chunks)
+
+        doc.content_text = text
+        doc.outline_json = outline
+        doc.status = "ready"
+        db.commit()
+    except Exception as e:
+        logger.error("Document processing failed: %s", e)
+        # Re-fetch doc if needed
+        doc = db.query(Document).filter(Document.id == file_id).first()
+        if doc:
+            doc.status = "error"
+            doc.error_message = str(e)
+            db.commit()
+    finally:
+        db.close()
+
+
 @router.post("/sessions/{session_id}/documents/upload", response_model=DocumentResponse)
 async def upload_document(
     session_id: str,
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: DBSession = Depends(get_db),
 ):
@@ -238,23 +267,10 @@ async def upload_document(
     )
     db.add(doc)
     db.commit()
+    db.refresh(doc)
 
-    try:
-        text, outline = extract_text(save_path, ext)
-        chunks = chunk_text(text)
-        add_document_chunks(session_id, file_id, chunks)
-
-        doc.content_text = text
-        doc.outline_json = outline
-        doc.status = "ready"
-        db.commit()
-        db.refresh(doc)
-    except Exception as e:
-        logger.error("Document processing failed: %s", e)
-        doc.status = "error"
-        doc.error_message = str(e)
-        db.commit()
-        db.refresh(doc)
+    # Nạp vào Background Task
+    background_tasks.add_task(process_document_task, session_id, file_id, save_path, ext)
 
     return DocumentResponse(
         id=doc.id,

@@ -1,15 +1,21 @@
 "use client";
 
-import { ArrowLeft, ClipboardList, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ClipboardList, Loader2, AlertTriangle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useSessionStore } from "@/hooks/useSession";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ReactMarkdown from "react-markdown";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 export function SummaryView({ onBack }: { onBack: () => void }) {
-  const { summary, loading, setActivePanel, generateQuiz, session } = useSessionStore();
+  const { summary, loading, generateSummary, generateQuiz, session } = useSessionStore();
+
+  const handleRefresh = async () => {
+    if (!session) return;
+    await generateSummary(session.id, summary?.document_id || undefined, true);
+  };
 
   if (loading.summary) {
     return (
@@ -42,6 +48,24 @@ export function SummaryView({ onBack }: { onBack: () => void }) {
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <span className="text-sm font-medium text-stone-700">Tóm tắt</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-stone-400 hover:text-blue-500"
+                onClick={handleRefresh}
+                disabled={loading.summary}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading.summary ? "animate-spin" : ""}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-[10px]">Tải lại tóm tắt mới (gọi AI)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Badge
           variant={isLowConfidence ? "destructive" : "secondary"}
           className="ml-auto text-[10px]"
@@ -87,16 +111,32 @@ export function SummaryView({ onBack }: { onBack: () => void }) {
 
         <Separator />
 
-        <div className="flex items-center justify-between">
-          <FeedbackWidget targetType="summary" targetId={summary.id} showLabel />
+        <div className="flex flex-col gap-3 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <FeedbackWidget targetType="summary" targetId={summary.id} compact />
+              <Separator orientation="vertical" className="h-4 mx-1" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1.5 text-stone-500 hover:text-blue-600"
+                onClick={handleRefresh}
+                disabled={loading.summary}
+              >
+                <RefreshCw className={`w-3 h-3 ${loading.summary ? "animate-spin" : ""}`} />
+                Làm mới
+              </Button>
+            </div>
+          </div>
+          
           <Button
             variant="outline"
             size="sm"
-            className="text-xs gap-1.5"
+            className="w-full text-xs gap-1.5 border-dashed border-stone-300 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50"
             onClick={() => session && generateQuiz(session.id)}
           >
             <ClipboardList className="w-3.5 h-3.5" />
-            Tạo quiz từ phần này
+            Tạo bộ câu hỏi luyện tập từ tóm tắt này
           </Button>
         </div>
       </div>
