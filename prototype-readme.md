@@ -16,5 +16,5 @@ Agent được tích hợp trong LMS của VinUni/VinSchool, hỗ trợ học si
 - **Bùi Lâm Tiến:** Hoàn thiện lại SPEC final, workflow, prototype demo, prototype-readme, hỗ trợ validate agent, test PDF.
 - **Trần Thượng Trường Sơn:** Build codebase (vibe coding front-back dựa trên spec ban đầu), hoàn thiện các chức năng về xử lí PDF, context dài.
 - **Trần Ngọc Huy:** Hỗ trợ sửa backend, xây dựng hệ thống prompt, system prompt theo cấu trúc.
-- **Trường Đăng Nghĩa:** Cải tiến prompt cho Agent, test Agent, hỗ trợ test frontend.
+- **Trường Đăng Nghĩa:** Test agent và cải tiến prompt cho agent, hỗ trợ test frontend.
 - **Nông Trung Kiên:** Logic backend (chức năng tải tài liệu), merge branch và xử lý conflict mã nguồn.
