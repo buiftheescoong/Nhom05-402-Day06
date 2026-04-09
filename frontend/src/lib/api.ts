@@ -92,6 +92,8 @@ export const api = {
       request<any[]>(`/api/student/sessions/${sessionId}/documents`),
     getDocumentContent: (docId: string) =>
       request<any>(`/api/student/documents/${docId}/content`),
+    getDocumentFileUrl: (docId: string) =>
+      `${API_BASE}/api/student/documents/${docId}/file`,
   },
 
   // --------------- AI Features ---------------

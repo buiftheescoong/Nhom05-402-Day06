@@ -1,6 +1,11 @@
+import os
+from urllib.parse import quote
+
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session as DBSession
 
+from app.config import settings
 from app.models.database import get_db, Course, Session, Student, Enrollment, Document
 from app.models.schemas import (
     StudentJoin,
@@ -182,3 +187,39 @@ def get_document_content(doc_id: str, db: DBSession = Depends(get_db)):
         "content": doc.content_text or "",
         "outline": doc.outline_json or [],
     }
+
+
+MEDIA_TYPES = {
+    "pdf": "application/pdf",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "doc": "application/msword",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "ppt": "application/vnd.ms-powerpoint",
+    "txt": "text/plain; charset=utf-8",
+}
+
+
+@router.get("/documents/{doc_id}/file")
+def get_document_file(doc_id: str, db: DBSession = Depends(get_db)):
+    """Serve the original uploaded file so the frontend can render it natively."""
+    doc = db.query(Document).filter(Document.id == doc_id).first()
+    if not doc:
+        raise HTTPException(404, "Không tìm thấy tài liệu")
+    session = db.query(Session).filter(Session.id == doc.session_id).first()
+    if not session or not session.is_open:
+        raise HTTPException(403, "Buổi học chưa được mở")
+
+    file_path = os.path.join(settings.upload_dir, f"{doc.id}.{doc.file_type}")
+    if not os.path.isfile(file_path):
+        raise HTTPException(404, "File không tồn tại trên server")
+
+    ascii_name = doc.filename.encode("ascii", "ignore").decode("ascii").strip() or "document"
+    utf8_name = quote(doc.filename)
+
+    return FileResponse(
+        path=file_path,
+        media_type=MEDIA_TYPES.get(doc.file_type, "application/octet-stream"),
+        headers={
+            "Content-Disposition": f"inline; filename=\"{ascii_name}\"; filename*=UTF-8''{utf8_name}"
+        },
+    )
