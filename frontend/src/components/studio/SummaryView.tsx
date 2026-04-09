@@ -1,12 +1,12 @@
 "use client";
 
-import { ArrowLeft, ThumbsUp, ThumbsDown, ClipboardList, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, ClipboardList, Loader2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useSessionStore } from "@/hooks/useSession";
 import ReactMarkdown from "react-markdown";
-import { api } from "@/lib/api";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 export function SummaryView({ onBack }: { onBack: () => void }) {
   const { summary, loading, setActivePanel, generateQuiz, session } = useSessionStore();
@@ -34,10 +34,6 @@ export function SummaryView({ onBack }: { onBack: () => void }) {
 
   const confidencePct = Math.round(summary.confidence * 100);
   const isLowConfidence = summary.confidence < 0.75;
-
-  const handleFeedback = (type: "like" | "dislike") => {
-    api.feedback.submit("summary", summary.id, type).catch(() => {});
-  };
 
   return (
     <div className="flex flex-col">
@@ -92,14 +88,7 @@ export function SummaryView({ onBack }: { onBack: () => void }) {
         <Separator />
 
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleFeedback("like")}>
-              <ThumbsUp className="w-3.5 h-3.5 text-stone-400" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleFeedback("dislike")}>
-              <ThumbsDown className="w-3.5 h-3.5 text-stone-400" />
-            </Button>
-          </div>
+          <FeedbackWidget targetType="summary" targetId={summary.id} showLabel />
           <Button
             variant="outline"
             size="sm"

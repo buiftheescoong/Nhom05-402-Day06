@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useSessionStore } from "@/hooks/useSession";
 import { QuizQuestion } from "./QuizQuestion";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import type { QuizEvaluation } from "@/types";
 
 export function QuizView({
@@ -66,13 +67,17 @@ export function QuizView({
       <Separator />
 
       {allDone && (
-        <div className="p-4">
+        <div className="p-4 space-y-3">
           <div className={`rounded-xl p-4 text-center ${avgScore >= 7 ? "bg-green-50" : avgScore >= 5 ? "bg-amber-50" : "bg-red-50"}`}>
             <Trophy className={`w-8 h-8 mx-auto mb-2 ${avgScore >= 7 ? "text-green-500" : avgScore >= 5 ? "text-amber-500" : "text-red-500"}`} />
             <p className="text-2xl font-bold text-stone-800">{avgScore.toFixed(1)}/10</p>
             <p className="text-sm text-stone-500 mt-1">
               {avgScore >= 7 ? "Xuất sắc! Bạn nắm vững kiến thức" : avgScore >= 5 ? "Khá tốt! Cần ôn thêm một số phần" : "Cần ôn tập lại! Đọc kỹ tài liệu nhé"}
             </p>
+          </div>
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[11px] text-stone-400">Bài kiểm tra này thế nào?</span>
+            <FeedbackWidget targetType="quiz" targetId={quiz.id} compact />
           </div>
         </div>
       )}
