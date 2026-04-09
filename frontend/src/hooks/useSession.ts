@@ -11,6 +11,7 @@ import { api } from "@/lib/api";
 interface SessionStore {
   session: Session | null;
   documents: DocumentSource[];
+  selectedDocId: string | null;
   chatMessages: ChatMessage[];
   summary: SummaryData | null;
   quiz: QuizData | null;
@@ -26,6 +27,7 @@ interface SessionStore {
 
   setSession: (s: Session) => void;
   setStudent: (id: string, name: string) => void;
+  setSelectedDocId: (docId: string | null) => void;
   loadDocuments: (sessionId: string) => Promise<void>;
   generateSummary: (sessionId: string, docId?: string) => Promise<void>;
   generateQuiz: (sessionId: string, opts?: any) => Promise<void>;
@@ -38,6 +40,7 @@ interface SessionStore {
 export const useSessionStore = create<SessionStore>((set, get) => ({
   session: null,
   documents: [],
+  selectedDocId: null,
   chatMessages: [],
   summary: null,
   quiz: null,
@@ -55,11 +58,18 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
   setStudent: (id, name) => set({ studentId: id, studentName: name }),
 
+  setSelectedDocId: (docId) => set({ selectedDocId: docId }),
+
   loadDocuments: async (sessionId) => {
     set((s) => ({ loading: { ...s.loading, documents: true } }));
     try {
       const docs = await api.student.getDocuments(sessionId);
-      set({ documents: docs });
+      const { selectedDocId } = get();
+      const stillExists = docs.some((d: DocumentSource) => d.id === selectedDocId);
+      set({
+        documents: docs,
+        selectedDocId: stillExists ? selectedDocId : (docs[0]?.id ?? null),
+      });
     } finally {
       set((s) => ({ loading: { ...s.loading, documents: false } }));
     }
@@ -71,8 +81,9 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       activePanel: "summary",
     }));
     try {
-      const { studentId } = get();
-      const result = await api.summary.generate(sessionId, studentId || undefined, docId);
+      const { studentId, selectedDocId } = get();
+      const effectiveDocId = docId ?? selectedDocId ?? undefined;
+      const result = await api.summary.generate(sessionId, studentId || undefined, effectiveDocId);
       set({ summary: result });
     } finally {
       set((s) => ({ loading: { ...s.loading, summary: false } }));
@@ -85,8 +96,11 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       activePanel: "quiz",
     }));
     try {
-      const { studentId } = get();
-      const result = await api.quiz.generate(sessionId, studentId || undefined, opts);
+      const { studentId, selectedDocId } = get();
+      const result = await api.quiz.generate(sessionId, studentId || undefined, {
+        ...opts,
+        document_id: opts?.document_id ?? selectedDocId ?? undefined,
+      });
       set({ quiz: result });
     } finally {
       set((s) => ({ loading: { ...s.loading, quiz: false } }));
@@ -94,7 +108,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   },
 
   sendChat: async (sessionId, message) => {
-    const { studentId, chatMessages } = get();
+    const { studentId, selectedDocId } = get();
     const userMsg: ChatMessage = {
       id: `temp-${Date.now()}`,
       role: "user",
@@ -121,6 +135,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         sessionId,
         message,
         studentId || undefined,
+        selectedDocId || undefined,
         (currentChunk) => {
           set((s) => ({
             chatMessages: s.chatMessages.map((msg) =>
@@ -162,6 +177,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     set({
       session: null,
       documents: [],
+      selectedDocId: null,
       chatMessages: [],
       summary: null,
       quiz: null,

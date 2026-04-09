@@ -149,12 +149,13 @@ export const api = {
   },
 
   chat: {
-    send: (sessionId: string, message: string, studentId?: string) =>
+    send: (sessionId: string, message: string, studentId?: string, documentId?: string) =>
       request<any>("/api/chat", {
         method: "POST",
         body: JSON.stringify({
           session_id: sessionId,
           student_id: studentId,
+          document_id: documentId,
           message,
         }),
       }),
@@ -162,6 +163,7 @@ export const api = {
       sessionId: string,
       message: string,
       studentId: string | undefined,
+      documentId: string | undefined,
       onChunk: (chunk: string) => void
     ) => {
       const res = await fetch(`${API_BASE}/api/chat/stream`, {
@@ -170,6 +172,7 @@ export const api = {
         body: JSON.stringify({
           session_id: sessionId,
           student_id: studentId,
+          document_id: documentId,
           message,
         }),
       });

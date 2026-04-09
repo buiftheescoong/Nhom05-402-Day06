@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     chunk_overlap: int = 200
     retrieval_top_k: int = 5
 
+    summary_batch_size: int = 10
+    summary_max_content_per_batch: int = 8000
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
     @property
