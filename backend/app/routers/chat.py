@@ -21,7 +21,7 @@ async def send_message(body: ChatRequest, db: DBSession = Depends(get_db)):
     db.add(user_msg)
     db.commit()
 
-    result = await chat_with_documents(body.session_id, body.message)
+    result = await chat_with_documents(body.session_id, body.message, body.document_id)
 
     ai_msg = ChatMessage(
         session_id=body.session_id,
@@ -76,7 +76,7 @@ async def send_message_stream(body: ChatRequest, db: DBSession = Depends(get_db)
     async def event_generator():
         full_content = ""
         sources = []
-        async for sse_payload in chat_with_documents_stream(body.session_id, body.message):
+        async for sse_payload in chat_with_documents_stream(body.session_id, body.message, body.document_id):
             yield sse_payload
             
             # Extract content to save to DB at the end

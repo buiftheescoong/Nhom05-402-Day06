@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Loader2, Trophy } from "lucide-react";
+import { ArrowLeft, Loader2, Trophy, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { useSessionStore } from "@/hooks/useSession";
 import { QuizQuestion } from "./QuizQuestion";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import type { QuizEvaluation } from "@/types";
 
@@ -17,9 +18,19 @@ export function QuizView({
   sessionId: string;
   onBack: () => void;
 }) {
-  const { quiz, loading } = useSessionStore();
+  const { quiz, loading, generateQuiz } = useSessionStore();
   const [results, setResults] = useState<Record<string, QuizEvaluation>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const handleRefresh = async () => {
+    await generateQuiz(sessionId, {
+      document_id: quiz?.document_id || undefined,
+      scope: quiz?.scope || "full",
+      difficulty: quiz?.difficulty || "medium"
+    }, true);
+    setResults({});
+    setCurrentIndex(0);
+  };
 
   if (loading.quiz) {
     return (
@@ -59,6 +70,24 @@ export function QuizView({
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <span className="text-sm font-medium text-stone-700">Bài kiểm tra</span>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-stone-400 hover:text-blue-500"
+                onClick={handleRefresh}
+                disabled={loading.quiz}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading.quiz ? "animate-spin" : ""}`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p className="text-[10px]">Tải lại bộ câu hỏi mới (gọi AI)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         <Badge variant="secondary" className="ml-auto text-[10px]">
           {Object.keys(results).length}/{quiz.questions.length} câu
         </Badge>
@@ -75,9 +104,23 @@ export function QuizView({
               {avgScore >= 7 ? "Xuất sắc! Bạn nắm vững kiến thức" : avgScore >= 5 ? "Khá tốt! Cần ôn thêm một số phần" : "Cần ôn tập lại! Đọc kỹ tài liệu nhé"}
             </p>
           </div>
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[11px] text-stone-400">Bài kiểm tra này thế nào?</span>
-            <FeedbackWidget targetType="quiz" targetId={quiz.id} compact />
+          <div className="flex flex-col gap-3 py-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <FeedbackWidget targetType="quiz" targetId={quiz.id} compact />
+                <Separator orientation="vertical" className="h-4 mx-1" />
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs gap-1.5 text-stone-500 hover:text-blue-600"
+                  onClick={handleRefresh}
+                  disabled={loading.quiz}
+                >
+                  <RefreshCw className={`w-3 h-3 ${loading.quiz ? "animate-spin" : ""}`} />
+                  Làm mới bộ câu hỏi
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       )}

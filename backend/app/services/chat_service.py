@@ -12,10 +12,11 @@ logger = logging.getLogger(__name__)
 async def chat_with_documents(
     session_id: str,
     message: str,
+    document_id: str | None = None,
 ) -> dict:
     """Answer a question using RAG over uploaded documents."""
 
-    relevant = query_chunks(session_id, message, n_results=5)
+    relevant = query_chunks(session_id, message, n_results=5, doc_id=document_id)
 
     sources = []
     context_parts = []
@@ -42,8 +43,8 @@ async def chat_with_documents(
         }
 
 
-async def chat_with_documents_stream(session_id: str, message: str):
-    relevant = query_chunks(session_id, message, n_results=5)
+async def chat_with_documents_stream(session_id: str, message: str, document_id: str | None = None):
+    relevant = query_chunks(session_id, message, n_results=5, doc_id=document_id)
 
     sources = []
     context_parts = []

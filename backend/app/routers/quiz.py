@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session as DBSession
 
 from app.models.database import get_db, Quiz, QuizQuestion, QuizAttempt
@@ -18,7 +18,42 @@ router = APIRouter()
 
 
 @router.post("/generate", response_model=QuizResponse)
-async def create_quiz(body: QuizGenerateRequest, db: DBSession = Depends(get_db)):
+async def create_quiz(
+    body: QuizGenerateRequest,
+    refresh: bool = Query(False, description="Bỏ qua cache, gọi lại AI để tạo bài kiểm tra mới"),
+    db: DBSession = Depends(get_db)
+):
+    # --- Cache lookup: tìm bài kiểm tra đã lưu ---
+    if not refresh:
+        query = db.query(Quiz).filter(
+            Quiz.session_id == body.session_id,
+            Quiz.scope == body.scope,
+            Quiz.difficulty == body.difficulty
+        )
+        if body.document_id:
+            query = query.filter(Quiz.document_id == body.document_id)
+        
+        cached = query.order_by(Quiz.created_at.desc()).first()
+
+        if cached and cached.questions:
+            return QuizResponse(
+                id=cached.id,
+                scope=cached.scope,
+                difficulty=cached.difficulty,
+                questions=[
+                    QuizQuestionResponse(
+                        id=q.id,
+                        question=q.question,
+                        difficulty=q.difficulty,
+                        bloom_level=q.bloom_level,
+                        source_ref=q.source_ref,
+                    )
+                    for q in cached.questions
+                ],
+                created_at=cached.created_at,
+            )
+
+    # --- Cache miss hoặc refresh=true: gọi AI ---
     questions_data = await generate_quiz(
         session_id=body.session_id,
         document_id=body.document_id,
@@ -71,6 +106,7 @@ async def create_quiz(body: QuizGenerateRequest, db: DBSession = Depends(get_db)
         ],
         created_at=quiz.created_at,
     )
+
 
 
 @router.post("/evaluate", response_model=QuizEvaluateResponse)

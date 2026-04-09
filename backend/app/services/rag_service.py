@@ -20,6 +20,12 @@ def get_chroma_client() -> chromadb.ClientAPI:
         )
     return _client
 
+def get_openai_ef():
+    return embedding_functions.OpenAIEmbeddingFunction(
+        api_key=settings.openai_api_key,
+        model_name="text-embedding-3-small"
+    )
+
 
 def get_embedding_function():
     if settings.gemini_api_key:
@@ -35,11 +41,17 @@ def get_embedding_function():
 
 def get_collection(session_id: str) -> chromadb.Collection:
     client = get_chroma_client()
-    return client.get_or_create_collection(
-        name=f"session_{session_id}",
-        metadata={"hnsw:space": "cosine"},
-        embedding_function=get_embedding_function(),
-    )
+    ef = get_embedding_function()
+    name = f"session_{session_id}"
+    try:
+        return client.get_or_create_collection(
+            name=name,
+            metadata={"hnsw:space": "cosine"},
+            embedding_function=ef,
+        )
+    except ValueError:
+        logger.warning("Embedding function conflict for %s, using persisted config", name)
+        return client.get_collection(name=name)
 
 
 def add_document_chunks(session_id: str, doc_id: str, chunks: list[str]):
@@ -77,16 +89,21 @@ def query_chunks(session_id: str, query: str, n_results: int = 5, doc_id: str | 
 
 
 def get_all_chunks(session_id: str, doc_id: str | None = None) -> list[str]:
-    """Get all document chunks for full-content operations."""
+    """Get all document chunks for full-content operations, sorted by chunk_index."""
     collection = get_collection(session_id)
     where = {"doc_id": doc_id} if doc_id else None
 
     try:
-        results = collection.get(where=where)
+        results = collection.get(where=where, include=["documents", "metadatas"])
     except Exception:
         return []
 
-    return results["documents"] if results and results["documents"] else []
+    if not results or not results["documents"]:
+        return []
+
+    pairs = list(zip(results["documents"], results["metadatas"]))
+    pairs.sort(key=lambda p: p[1].get("chunk_index", 0))
+    return [doc for doc, _ in pairs]
 
 
 def delete_document_chunks(session_id: str, doc_id: str):
