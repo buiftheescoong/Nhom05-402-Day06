@@ -2,6 +2,7 @@ import logging
 
 import chromadb
 from chromadb.config import Settings as ChromaSettings
+from chromadb.utils import embedding_functions
 
 from app.config import settings
 
@@ -19,12 +20,19 @@ def get_chroma_client() -> chromadb.ClientAPI:
         )
     return _client
 
+def get_openai_ef():
+    return embedding_functions.OpenAIEmbeddingFunction(
+        api_key=settings.openai_api_key,
+        model_name="text-embedding-3-small"
+    )
+
 
 def get_collection(session_id: str) -> chromadb.Collection:
     client = get_chroma_client()
     return client.get_or_create_collection(
         name=f"session_{session_id}",
         metadata={"hnsw:space": "cosine"},
+        embedding_function=get_openai_ef()
     )
 
 

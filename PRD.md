@@ -1,138 +1,115 @@
-# PRD — AI Learning Co-pilot (VinUni/VinSchool)
+# PRD — AI Learning Co-pilot (AI Tutor - Nền tảng học tập thông minh)
 
 ## 1. Product overview
 
-**Tên sản phẩm:** AI Learning Co-pilot  
-**Mục tiêu:** Giúp học sinh/sinh viên tự học hiệu quả hơn từ tài liệu dài bằng cách tóm tắt có cấu trúc, tạo quiz tự luận, và gợi ý nhiều cấp độ thay vì đưa đáp án ngay.
+**Tên sản phẩm:** AI Tutor (AI Learning Co-pilot)
+**Mục tiêu:** Nền tảng học tập kết nối Giáo viên và Học sinh. Giúp giáo viên dễ dàng khởi tạo lớp học/buổi học và phân phối tài liệu; giúp học sinh tự học hiệu quả qua hệ thống tóm tắt tài liệu, tạo bài tập tự luận (quiz), và gợi ý (hint) thông minh.
 
-**Problem statement:** Người học mất nhiều thời gian đọc tài liệu và khó tự đánh giá đã hiểu bài hay chưa.
+**Problem statement:** Học sinh khó khăn khi đối mặt với lượng tài liệu dài và cần một môi trường khép kín (theo chuyên đề lớp học) có hệ thống đặt câu hỏi và chấm điểm chuẩn mực. Giáo viên cần một hệ thống đơn giản để cung cấp tài liệu cho học sinh không bị phân tán.
 
 ---
 
 ## 2. Users & JTBD
 
-- **Primary users:** Học sinh VinSchool, sinh viên VinUni đang ôn thi.
-- **JTBD chính:** "Khi tôi có tài liệu dài để ôn thi, tôi muốn hiểu nhanh ý chính và tự kiểm tra mức độ hiểu, để học hiệu quả hơn trong thời gian ngắn."
+- **Giáo viên (Teacher / Admin):**
+  - **JTBD chính:** "Tôi muốn một nơi dễ dàng tạo lớp, cung cấp mã PIN, giao tài liệu theo từng buổi (notebooks) để định hướng nguồn học bám sát chương trình, đồng thời kiểm soát việc mở/đóng các buổi học."
+- **Học sinh (Student / Primary User):**
+  - **JTBD chính:** "Tôi muốn tham gia lớp học ngay bằng mã Code dễ nhớ, có thể chọn buổi học và dùng AI để tóm tắt nhanh, tạo bài kiểm tra thử, và giải thích chi tiết những chỗ tôi không hiểu dựa trên đúng tài liệu giáo viên đã giao."
 
 ---
 
-## 2.1 Kiến trúc giao diện và luồng LMS
+## 3. Kiến trúc giao diện và luồng LMS
 
-Trợ lý AI hoạt động **nhúng trong trang học tập (LMS)**, không phải màn hình độc lập chỉ để upload.
+Sản phẩm cung cấp hai cổng trải nghiệm chính biệt lập để tối ưu workflows:
 
-- **Thanh điều hướng trái theo buổi/ngày:** Tab **Day 01, Day 02, Day 03, … Day N**. Mỗi Day là một nhóm nguồn tài liệu của buổi đó.
-- **Tài liệu trong Day:** Mỗi Day chứa danh sách mục (slide bài giảng, PDF tham khảo, ảnh PNG, …). Người học **chọn một tài liệu** để xem ở **vùng nội dung chính** (viewer PDF/slide/ảnh).
-- **Trợ lý AI (chatbot):** Nút **floating góc dưới bên phải**; mặc định **đóng**. Khi bấm mới mở **hộp chat (popup/panel)**. Ngữ cảnh AI gắn với **Day đang chọn** và **tài liệu đang mở** (grounding/RAG).
-- **Giả định hackathon:** Danh sách Day và tài liệu có thể **seed sẵn** hoặc thêm qua luồng tối giản (không bắt buộc full CMS); ví dụ **Day 01:** 1 slide bài giảng + 1 PDF tài liệu tham khảo.
+### Giáo viên (Teacher Portal)
+- **Tạo/Quản lý Lớp (Class):** Cấp mã Code tham gia, thiết lập mã PIN giới hạn quyền Admin.
+- **Tạo/Quản lý Buổi học (Notebook):** Tạo các buổi học theo lộ trình (VD: Buổi 1, Buổi 2).
+- **Quản lý Tài liệu:** Nhúng/Upload tài liệu (PDF, Word) vào thẳng từng Buổi.
+- **Đóng/Mở trạng thái học:** Chỉ khi giáo viên "mở" buổi học, học sinh mới thấy tài liệu và công cụ AI của buổi đó.
 
----
-
-## 3. MVP scope
-
-## In scope (MVP)
-
-- **Vỏ LMS:** Điều hướng theo Day, danh sách tài liệu theo Day, viewer tài liệu trên vùng chính
-- **Widget chat:** Nút góc phải dưới + popup chat; chat **ngữ cảnh** theo tài liệu/Day đang xem (không phải chat rời toàn hệ thống)
-- **Xử lý nội dung:** Parse/embed tài liệu đã gắn với Day (`PDF`, `DOCX`, slide/ảnh theo khả năng MVP)
-- Tóm tắt tài liệu theo cấu trúc rõ ràng
-- Sinh quiz tự luận theo nội dung tài liệu
-- Hint 3 cấp độ khi làm quiz
-- Trích dẫn nguồn cho output AI
-- Feedback/correction cơ bản (`Report/Edit`, like/dislike)
-
-## Out of scope (giai đoạn hackathon)
-
-- Chat Q&A **tự do toàn hệ thống** không gắn tài liệu (khác với popup chat ngữ cảnh trong MVP)
-- Fine-tuning model quy mô lớn
-- OCR nâng cao cho ảnh mờ/phức tạp
-- Template curriculum theo từng khối/lớp đầy đủ
-- CMS đầy đủ cho giáo viên quản lý Day/tài liệu (chỉ cần seed hoặc thêm tối giản)
+### Học sinh (Student Portal)
+- **Join Session:** Màn hình nhập Tên và Class Code đê join trực tiếp mà không cần account.
+- **List Notebooks:** Khi vào lớp, bên trái (navigation) hiện danh sách các buổi học đang "Mở".
+- **Chat/Tài liệu tương tác:** Khu vực xem tài liệu kết hợp hộp thoại Chat AI & Quiz/Summary. Mọi tương tác của học viên đều giới hạn trong bối cảnh (context) file tài liệu thuộc buổi học cụ thể (RAG Grounding).
 
 ---
 
-## 4. Value proposition
+## 4. MVP scope
 
-- Rút ngắn thời gian ôn tài liệu dài từ cách học thủ công sang flow hỗ trợ bởi AI.
-- Tăng chất lượng tự học bằng phương pháp gợi mở (Socratic), không lộ đáp án quá sớm.
-- Giảm rủi ro học sai nhờ bắt buộc trích dẫn nguồn.
+### In scope (MVP)
+- **Hệ thống Quản lý cơ bản:**
+  - Giáo viên: Tạo lớp/PIN, Upload tài liệu PDF/DOCX, Đóng/mở bài giảng.
+  - Học sinh: Join bằng mã, xem tài liệu, chuyển đổi giữa các bài giảng.
+- **Tính năng AI cho Học sinh:**
+  - Sinh Tóm tắt (Summary) có cấu trúc từ tài liệu.
+  - Chức năng Quiz tự luận + Hint 3 cấp độ.
+  - Chat Hỏi đáp Q&A (RAG) chỉ dựa vào nội dung buổi học.
+- **Hệ thống Feedback:** Gửi đánh giá/chỉnh sửa report trực tiếp với model output (Like/Dislike).
+
+### Out of scope (giai đoạn MVP Hackathon)
+- Phân quyền user quản trị phức tạp (RBAC) nhiều trường học / SSO Login.
+- Tracking chi tiết analytics tiến độ từng học viên cho giáo viên.
+- Multimedia parsing / OCR nâng cao (Video, Ảnh mờ).
+- Thanh toán / Subscriptions.
 
 ---
 
 ## 5. User stories (MVP)
 
-1. **Chọn Day và xem tài liệu**
-   - Là học sinh, tôi muốn chọn **Day** (ví dụ Day 01) và chọn **một tài liệu** trong danh sách để xem slide/PDF/ảnh ở màn hình chính.
-2. **Mở trợ lý AI**
-   - Là học sinh, tôi muốn bấm nút góc dưới phải để **mở hộp chat** và hỏi/học dựa trên **tài liệu đang mở** và **Day hiện tại**.
-3. **Tóm tắt**
-   - Là học sinh, tôi muốn nhận tóm tắt ngắn gọn + key points để hiểu nhanh nội dung chính.
-4. **Quiz**
-   - Là học sinh, tôi muốn hệ thống tạo câu hỏi tự luận từ tài liệu đang xem để tự kiểm tra kiến thức.
-5. **Hint**
-   - Là học sinh, tôi muốn nhận gợi ý theo cấp độ khi bí ý để tự suy nghĩ trước khi xem đáp án.
-6. **Feedback**
-   - Là học sinh, tôi muốn báo nội dung AI sai và chỉnh sửa để kết quả tốt hơn ở lần sau.
+### Cho Giáo viên
+1. **Tạo lớp:** Là giáo viên, tôi muốn tạo nhanh một không gian lớp và có Mã Lớp để gửi cho sinh viên.
+2. **Tạo lộ trình:** Là giáo viên, tôi muốn tạo từng "Buổi học" (Notebooks) và tải file học liệu lên đó.
+3. **Phân phối:** Là giáo viên, tôi muốn có nút gạt bật/tắt để chỉ định học sinh có được phép truy cập xem bài hay chưa.
+
+### Cho Học sinh
+4. **Tham gia:** Là học sinh, tôi muốn nhập Code + Tên để vào thẳng lớp mà không cần email hay đăng ký tài khoản rườm rà.
+5. **Chọn Buổi và xem tài liệu:** Là học sinh, tôi muốn chọn buổi học (ví dụ Buổi 01) đang học để màn hình hiển thị ngay các tài liệu liên quan.
+6. **Mở trợ lý AI:** Là học sinh, tôi muốn dùng công cụ trợ lý để Tóm tắt những ý chính mục tiêu, giúp đọc lướt nhanh các khai niệm trọng tâm.
+7. **Tự luyện (Quiz & Hint):** Là học sinh, tôi muốn AI tự động mix câu hỏi tự luận. Khi gặp bài khó, tôi dùng nút "Hint L1-L2-L3" để nhận nhắc nhở gợi mở tư duy thay vì xem đáp án liền.
+8. **Feedback:** Là học sinh, nếu AI trả lời sai kiến thức tài liệu, tôi có thể bấm Report để hệ thống lưu log.
 
 ---
 
 ## 6. Functional requirements (product-level)
 
-- `FR0` Hiển thị điều hướng Day, danh sách tài liệu theo Day, và viewer khi người dùng chọn tài liệu.
-- `FR0b` Widget chat floating (đóng/mở popup); ngữ cảnh chat gắn với `day_id` + `document_id` đang xem.
-- `FR1` Parse/embed nội dung tài liệu đã gắn với Day (upload độc lập không còn là luồng chính; có thể seed hoặc API tối giản).
-- `FR2` Sinh tóm tắt có cấu trúc (key points + summary body).
-- `FR3` Sinh quiz 5-10 câu theo phạm vi tài liệu.
-- `FR4` Chấm câu trả lời tự luận và đưa nhận xét.
-- `FR5` Cung cấp hint 3 cấp (gợi mở -> thu hẹp -> gần đáp án).
-- `FR6` Mọi câu trả lời quan trọng phải có trích dẫn nguồn.
-- `FR7` Cho phép user gửi correction (`Report/Edit`, thumbs).
-- `FR8` Khi AI không chắc chắn phải fallback an toàn, không trả lời bịa.
+- `FR_T1` Teacher portal cho phép tạo lớp ẩn dưới PIN code mật.
+- `FR_T2` Teacher có thể khởi tạo Notebook định kỳ, tải tài liệu định dạng .pdf/.docx lên hệ thống RAG pipeline.
+- `FR_S1` Student portal xác thực bằng Code lớp, tự động điều hướng sang dashboard có sidebar duyệt các active notebooks.
+- `FR_AI1` Chunk/Vectorize các tài liệu mới upload thành embedding (Lưu tại ChromaDB).
+- `FR_AI2` Lệnh "Tóm tắt" trích xuất ý chính dạng bullet-points + citation vị trí văn bản.
+- `FR_AI3` LLM tự phân tích scope văn bản và sinh 5-10 câu hỏi dạng tự luận có chức năng tự động grading & nhận xét.
+- `FR_AI4` Cung cấp luồng hint từng bước L1 -> L3 không spoil đáp án cuối.
+- `FR_AI5` Mọi câu trả lời chat RAG phải Grounded và có Citation (chỉ tới document nội bộ). Nếu ngoài miền tài liệu, fallback thông báo rõ ràng.
 
 ---
 
-## 7. Success metrics & launch gates
+## 7. Success metrics & Launch gates (MVP Goals)
 
-## Core metrics
-
+### Core metrics
 - **GAR (Grounded Answer Rate):** >= 85%
 - **TSR (Task Success @1-turn):** >= 70%
-- **P95 latency:** <= 3.0s cho luồng trả lời ngắn
+- **P95 latency:** <= 3.0-5.0s cho luồng trả lời ngắn text-chat RAG.
+- **Tỉ lệ sinh câu hỏi hợp lệ:** >= 90%.
 
-## Guardrails
-
-- Correction rate <= 20% (theo ngày, rolling)
-- No-citation rate <= 10%
-- Cost per answered query <= $0.02
-
-## Launch gate
-
-- GAR đạt ngưỡng trong 2 vòng đo liên tiếp
-- TSR đạt ngưỡng ít nhất 1 tuần pilot
-- Không chạm red flag trust trong tuần gần nhất
+### Launch gate
+- Mọi flow phải chạy xuyên suốt: Giáo viên tạo lớp (sinh mã code) -> Học sinh nhập mã code truy cập đúng resource -> Chức năng Chat RAG / Summary phân tích đúng content đã upload mà không sập.
 
 ---
 
 ## 8. Risks & mitigations
 
-1. **Hallucination / sai kiến thức**
-   - Mitigation: grounding bắt buộc, source citation, fallback khi similarity thấp.
-2. **Quiz/hint lệch độ khó**
-   - Mitigation: ràng buộc theo grade/chapter, theo dõi hint rate để tune.
-3. **User tin kết quả sai mà không biết**
-   - Mitigation: "Xem đoạn gốc", report 1-click, hiển thị độ chắc chắn.
-4. **Rủi ro dữ liệu nội bộ**
-   - Mitigation: bảo mật server, phân quyền truy cập, logging tối thiểu.
+1. **Hallucination / Trả lời ảo kiến thức ngoài LMS:**
+   - Mitigation: RAG strict prompt instruction, giới hạn Similarity search threshold, fallback template tĩnh nếu không có matching chunk.
+2. **Cost API LLM bùng nổ khi scale dữ liệu nhiều batch:**
+   - Mitigation: Setup file `config` định tuyến các task đơn giản sang mô hình open/vi mô hình rẻ tiền hơn (như Gemini 1.5-flash).
+3. **Xung đột phiên truy cập khi code đơn giản:**
+   - Mitigation: Hạn chế data lọt ngoài nhóm bằng cách bảo vệ bằng ID phiên của frontend/Zustand store.
 
 ---
 
-## 9. Rollout plan (hackathon)
+## 9. Definition of Done (Hackathon Run)
 
-- **Ngày 1-2:** Foundation (infra, parser, prompt baseline, **shell LMS: Day + viewer + popup chat**, seed Day 01: slide + PDF)
-- **Ngày 3-4:** Integration (API + UI flow summarize/quiz/hint trong ngữ cảnh tài liệu đang mở)
-- **Ngày 5-6:** Polish + eval + demo rehearsal
-
-**Definition of Done (MVP):**
-
-- Demo chạy end-to-end: **chọn Day → chọn tài liệu → viewer → (mở popup chat)** → tóm tắt/quiz/hint với ít nhất một Day có tài liệu thật (ví dụ Day 01: slide + PDF)
-- Có output tóm tắt, quiz, hint + citation
-- Có report lỗi và fallback khi không chắc chắn
+- Demo E2E chạy trên Docker/Render/Railway... (cả BE/FE).
+- Split hai luồng rõ ràng Giáo - Trò.
+- Đầy đủ tính năng phân tích RAG (Hint, Quiz, Summary). Cảnh báo minh bạch trên UI khi file quá lớn.

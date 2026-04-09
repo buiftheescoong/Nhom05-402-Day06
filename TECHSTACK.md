@@ -1,124 +1,83 @@
-# Tech Stack — AI Learning Co-pilot MVP
+# Tech Stack — AI Learning Co-pilot (AI Tutor)
 
 ## 1. Mục tiêu kỹ thuật
 
-- Build MVP nhanh trong hackathon 6 ngày.
-- Tối ưu để có demo end-to-end ổn định.
-- Ưu tiên kiến trúc đơn giản, dễ debug, dễ mở rộng sau hackathon.
+- Xây dựng sản phẩm giáo dục MVP (Nền tảng học tập thông minh).
+- Tối ưu demo end-to-end ổn định với phân phối luồng Giáo viên (Teacher) và Học sinh (Student).
+- Hỗ trợ đa dạng nền tảng LLM định tuyến (OpenAI/Gemini) để tối ưu chi phí và tăng performance.
 
 ---
 
 ## 2. Architecture tổng quan
 
-`Frontend (Next.js)` -> `Backend API (FastAPI)` -> `AI Services (LLM + Embedding)` -> `RAG Storage (ChromaDB)` -> `Document Parsing (PyMuPDF/python-docx)`
+`Frontend (Next.js/React)` -> `Backend API (FastAPI)` -> `LLM Router (OpenAI/Gemini)`
+- `Backend API` -> `RAG Storage (ChromaDB)` & `Relational DB (SQLite)`
+- `Document Parsing` -> `PyMuPDF / python-docx`
 
 ---
 
-## 3. Stack đề xuất (MVP)
+## 3. Stack hiện tại
 
-## Frontend
+### Frontend
+- **Framework:** Next.js 16 (App Router), React 19
+- **UI:** Tailwind CSS v4, base-ui, class-variance-authority, shadcn
+- **State management:** Zustand
+- **Màn hình/Luồng:**
+  - Giáo viên: Quản lý lớp, tạo buổi học (notebooks), upload tài liệu học tập.
+  - Học sinh: Join lớp bằng code định danh, sử dụng Tóm tắt AI, tạo Quiz, Chat Q&A có ngữ cảnh.
 
-- **Framework:** Next.js (React + TypeScript)
-- **UI:** Tailwind CSS (hoặc component library nhẹ)
-- **State/data fetching:** React Query/SWR
-- **Màn hình chính:** Upload, Summary, Quiz, Hint, Feedback
+### Backend
+- **API framework:** FastAPI (Python 3.12+)
+- **Server:** Uvicorn
+- **ORM / Validation:** SQLAlchemy, Pydantic (schema/settings)
+- **Thiết kế API:** chia router độc lập (`teacher`, `student`, `summary`, `quiz`, `chat`, `feedback`).
 
-## Backend
+### AI/LLM layer
+- **LLM/Router:** Hỗ trợ OpenAI (ví dụ GPT-4o) và Google GenAI (Gemini) qua Langchain layer (`langchain-openai`, `langchain-google-genai`).
+- **Embedding:** OpenAI/Google hoặc provider local.
+- **Chain Flow:** LangChain để quản lý text-splitters (chunking ~1000, overlap ~200) và prompt template generation.
 
-- **API framework:** FastAPI (Python 3.11+)
-- **Server:** Uvicorn/Gunicorn
-- **Validation:** Pydantic schema cho request/response
-- **Auth (pilot):** token đơn giản hoặc bypass nội bộ hackathon
+### Database & Storage
+- **Relational DB:** SQLite qua `aiosqlite` & `SQLAlchemy`. Quản lý metadata cấu trúc lớp, session, buổi học.
+- **RAG/Vector DB:** ChromaDB (Local persistence).
+- **File Storage:** Lưu trữ nội bộ hệ thống trong `uploads` directory.
 
-## AI/LLM layer
-
-- **LLM generation:** Claude API (summarize, quiz, hint, grading)
-- **Embedding:** `text-embedding-3-small` (hoặc model tương đương)
-- **Prompting:** prompt template versioned theo task (`summary`, `quiz`, `hint_l1/l2/l3`, `grader`)
-
-## RAG & data layer
-
-- **Vector DB:** ChromaDB (local) cho MVP
-- **Chunking:** ~500 tokens, overlap ~50
-- **Retrieval:** top-k chunks + similarity threshold
-- **Parsing:** PyMuPDF (PDF), python-docx (DOCX)
-
-## Deployment & DevOps
-
-- **Frontend deploy:** Vercel
-- **Backend deploy:** Railway (hoặc Render)
-- **Container:** Docker + docker-compose
-- **CI:** GitHub Actions (lint, test cơ bản, build check)
-- **Observability:** logging + latency/error metrics cơ bản
+### Deployment & DevOps
+- **Containerization:** Docker + `docker-compose` phân tách minh bạch `frontend` & `backend`.
+- **Environment:** Quản lý biến môi trường bảo mật qua `.env`.
 
 ---
 
-## 4. API surface (MVP)
+## 4. API surface (Backend Routers)
 
-- `POST /upload`  
-  Input: file (`pdf/docx`)  
-  Output: `doc_id`, trạng thái parse, metadata
-
-- `POST /summarize`  
-  Input: `doc_id`, scope/chapter  
-  Output: summary + `source_chunk_ids`
-
-- `POST /quiz`  
-  Input: `doc_id`, scope, difficulty, num_questions  
-  Output: quiz items + `source_chunk_ids`
-
-- `POST /hint`  
-  Input: question context, hint level (1/2/3)  
-  Output: hint text + `source_chunk_ids`
-
-- `POST /feedback`  
-  Input: object type (`summary/quiz/hint`), rating/report/edit note  
-  Output: ack + feedback id
+- `GET/POST /api/teacher/...`
+  - Quản lý lớp học (Tạo lớp, tạo PIN giới hạn).
+  - Quản lý notebook/buổi học, cập nhật trạng thái mở khóa bài giảng cho học sinh.
+  - Upload file (PDF, DOCX) và Parse RAG vector.
+- `GET/POST /api/student/...`
+  - Tham gia lớp qua tham chiếu tên và class code.
+  - Xem danh sách documents của session hiện tại.
+- `POST /api/summary/...`
+  - Tạo tóm tắt ngữ liệu dài lấy từ database.
+- `POST /api/quiz/...`
+  - Sinh trắc nghiệm/Tự luận kèm Hint 3 cấp độ (L1/L2/L3).
+- `POST /api/chat/...`
+  - Chat có context RAG trực tiếp từ tài liệu đang thao tác.
+- `POST /api/feedback/...`
+  - Gửi báo lỗi hoặc đánh giá (rating) kết quả mô hình.
 
 ---
 
-## 5. Non-functional targets
+## 5. Non-functional targets (MVP)
 
-- **Latency mục tiêu:**
-  - Summarize/quiz/hint: 5-10 giây (MVP với file lớn)
-  - P95 cho phản hồi ngắn: <= 3s khi có cache và context ngắn
-- **Cost:** mục tiêu dưới $0.02/query trung bình
-- **Reliability:** error rate API < 5% trong demo
-- **Security:** không public tài liệu nội bộ; secrets qua env vars
+- **Latency:** Xử lý file, tóm tắt tài liệu lớn: 5-10 giây; P95 cho phản hồi chat (RAG) <= 3-5s (Phụ thuộc API OpenAI/Gemini external).
+- **Tính bảo mật:** Cấu trúc PIN + Mã định danh lớp tránh chia sẻ rộng rãi. Biến secrets nằm 100% tại `.env`.
+- **Khả năng duy trì / Mở rộng:** Dùng LLM router ở config giúp dễ chuyển đổi mô hình (ví dụ chuyển hẳn qua Gemini nếu OpenAI rate limit).
 
 ---
 
-## 6. Grounding & safety rules
+## 6. Trade-offs thiết kế (Dạng MVP Hackathon)
 
-- Mọi output quan trọng phải kèm `source_chunk_id`.
-- Nếu retrieval similarity < ngưỡng (vd 0.7), trả về cảnh báo "không đủ chắc chắn".
-- Không trả lời chắc chắn khi ngoài phạm vi tài liệu.
-- Bật cơ chế report/edit ở mọi bước quan trọng.
-
----
-
-## 7. Data model (tối thiểu)
-
-- `documents(doc_id, owner_id, filename, file_type, created_at)`
-- `chunks(chunk_id, doc_id, page_no, text, embedding_ref)`
-- `quizzes(quiz_id, doc_id, created_at, difficulty, scope)`
-- `quiz_questions(question_id, quiz_id, prompt, model_answer, source_chunk_ids)`
-- `feedback(feedback_id, user_id, object_type, object_id, rating, note, created_at)`
-
----
-
-## 8. Trade-offs trong MVP
-
-- Chọn Chroma local để nhanh, chấp nhận chưa HA.
-- Chưa tách microservices để giảm integration complexity.
-- Chưa làm fine-tuning; dùng prompt + retrieval + feedback loop.
-- Chưa làm OCR nâng cao để giữ tiến độ demo.
-
----
-
-## 9. Next phase (sau MVP)
-
-- Thêm Chat Q&A (F5) có citation.
-- Thêm Redis cache và batching để giảm latency/cost.
-- Migrate vector DB managed (Pinecone/Weaviate) nếu scale.
-- Thêm auth/role chuẩn cho trường lớp.
+- Chỉ dùng SQLite thay cho Postgres để tối giản dependency cho setup local.
+- Tương tự với ChromaDB chạy local directory. 
+- Authentication luồng Student dựa trên Session và Mã Lớp/Tên học sinh để giảm rào cản đăng ký tài khoản (rất phù hợp cho LMS test/Hackathon flow).
