@@ -1,17 +1,13 @@
 "use client";
 
-import { User, Bot, ThumbsUp, ThumbsDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { User, Bot } from "lucide-react";
 import type { ChatMessage as ChatMessageType } from "@/types";
 import ReactMarkdown from "react-markdown";
-import { api } from "@/lib/api";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 
 export function ChatMessage({ message }: { message: ChatMessageType }) {
   const isUser = message.role === "user";
-
-  const handleFeedback = (type: "like" | "dislike") => {
-    api.feedback.submit("chat", message.id, type).catch(() => {});
-  };
+  const isTempId = message.id.startsWith("temp-");
 
   return (
     <div className={`flex gap-3 ${isUser ? "justify-end" : ""}`}>
@@ -51,24 +47,9 @@ export function ChatMessage({ message }: { message: ChatMessageType }) {
           </div>
         )}
 
-        {!isUser && (
-          <div className="mt-1.5 flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-stone-300 hover:text-green-500"
-              onClick={() => handleFeedback("like")}
-            >
-              <ThumbsUp className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-stone-300 hover:text-red-500"
-              onClick={() => handleFeedback("dislike")}
-            >
-              <ThumbsDown className="w-3 h-3" />
-            </Button>
+        {!isUser && !isTempId && (
+          <div className="mt-1.5">
+            <FeedbackWidget targetType="chat" targetId={message.id} compact />
           </div>
         )}
       </div>

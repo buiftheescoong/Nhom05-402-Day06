@@ -22,7 +22,7 @@ from app.services.rag_service import add_document_chunks, delete_document_chunks
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-ALLOWED_EXTENSIONS = {"pdf", "docx", "txt", "doc"}
+ALLOWED_EXTENSIONS = {"pdf", "docx", "txt", "doc", "pptx", "ppt"}
 
 
 def _get_ext(filename: str) -> str:
