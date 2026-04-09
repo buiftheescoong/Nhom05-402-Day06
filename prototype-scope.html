@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prototype - 6 Screen Map va Flow</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --card: #ffffff;
+      --text: #111827;
+      --muted: #6b7280;
+      --ok: #0f766e;
+      --ok-bg: #ccfbf1;
+      --no: #991b1b;
+      --no-bg: #fee2e2;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --warn: #92400e;
+      --warn-bg: #ffedd5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: #fff;
+      border-radius: 14px;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    .hero p {
+      margin: 0;
+      opacity: 0.92;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      margin-right: 6px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .tag.ok {
+      background: var(--ok-bg);
+      color: var(--ok);
+    }
+
+    .tag.no {
+      background: var(--no-bg);
+      color: var(--no);
+    }
+
+    .tag.warn {
+      background: var(--warn-bg);
+      color: var(--warn);
+    }
+
+    ul {
+      margin: 10px 0 0;
+      padding-left: 18px;
+    }
+
+    li { margin: 8px 0; }
+
+    .muted { color: var(--muted); }
+
+    .section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .section h2 {
+      margin-top: 0;
+      margin-bottom: 12px;
+    }
+
+    .steps6 {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .step {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fafafa;
+      min-height: 110px;
+      position: relative;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent);
+    }
+
+    .step small {
+      color: var(--muted);
+    }
+
+    .cards6 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .card h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .status {
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+      border-radius: 6px;
+      padding: 2px 6px;
+      margin-bottom: 8px;
+    }
+
+    .status.mvp {
+      color: var(--ok);
+      background: var(--ok-bg);
+    }
+
+    .status.out {
+      color: var(--no);
+      background: var(--no-bg);
+    }
+
+    .status.warn {
+      color: var(--warn);
+      background: var(--warn-bg);
+    }
+
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #fcfcfd;
+    }
+
+    .lane h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+
+    .flowline {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .node {
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+      min-height: 64px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .kpi {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .kpi .card {
+      background: #fafafa;
+    }
+
+    @media (max-width: 900px) {
+      .grid2, .cards6, .steps6, .flowline, .kpi {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>AI Learning Co-pilot - 6 Screen Map Prototype</h1>
+      <p>Ban prototype sat tai lieu PRD/SRS: co MVP scope, out-of-scope va flow Happy / Low-confidence / Failure-Correction.</p>
+    </section>
+
+    <section class="grid2">
+      <article class="panel">
+        <h2>MVP Scope (Hackathon)</h2>
+        <span class="tag ok">IN SCOPE</span>
+        <ul>
+          <li><strong>F1:</strong> Upload + parse PDF/DOCX + status va recover message.</li>
+          <li><strong>F2:</strong> Summary co key points va citation.</li>
+          <li><strong>F3:</strong> Quiz tu luan 5-10 cau + nhan xet/cham co ban.</li>
+          <li><strong>F4:</strong> Hint 3 cap do (L1/L2/L3), huong tu duy truoc.</li>
+          <li><strong>Feedback loop:</strong> Report/Edit + thumbs tai summary/quiz/hint.</li>
+          <li><strong>Grounding:</strong> canh bao khi khong du bang chung retrieval.</li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Out of Scope (Hackathon)</h2>
+        <span class="tag no">OUT OF SCOPE</span>
+        <ul>
+          <li><strong>F5 - Chat Q&A full:</strong> de sau MVP.</li>
+          <li><strong>Fine-tuning lon:</strong> chua trien khai trong 6 ngay.</li>
+          <li><strong>Advanced OCR:</strong> chua support anh mo, cong thuc phuc tap.</li>
+          <li><strong>Curriculum template builder:</strong> chua theo day du lop/mon/chapter.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="section">
+      <h2>6 Screen Map Prototype</h2>
+      <div class="cards6">
+        <article class="card">
+          <span class="status mvp">Screen 1 · MVP</span>
+          <h3>Upload & Doc Processing</h3>
+          <p class="muted">Dropzone, file validation, parse status, retry/re-upload.</p>
+        </article>
+        <article class="card">
+          <span class="status mvp">Screen 2 · MVP</span>
+          <h3>Document Outline Review</h3>
+          <p class="muted">Hien outline/chunk preview, canh bao low-confidence, cho sua nhanh.</p>
+        </article>
+        <article class="card">
+          <span class="status mvp">Screen 3 · MVP</span>
+          <h3>Summary + Citation</h3>
+          <p class="muted">Key points, detail summary, nut "Tao quiz", link "Xem doan goc".</p>
+        </article>
+        <article class="card">
+          <span class="status mvp">Screen 4 · MVP</span>
+          <h3>Quiz Workspace</h3>
+          <p class="muted">5-10 cau hoi, answer box, submit va nhan ket qua cham co ban.</p>
+        </article>
+        <article class="card">
+          <span class="status mvp">Screen 5 · MVP</span>
+          <h3>Hint Drawer (L1/L2/L3)</h3>
+          <p class="muted">Goi y tang dan, fallback citation neu AI khong chac chan.</p>
+        </article>
+        <article class="card">
+          <span class="status mvp">Screen 6 · MVP</span>
+          <h3>Result + Feedback/Correction</h3>
+          <p class="muted">Tong ket diem, diem yeu, Report/Edit, thumbs, log correction.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Prototype Flow - Happy Path (sat MVP)</h2>
+      <div class="steps6">
+        <div class="step">
+          <strong>1) Upload</strong>
+          User tai PDF/DOCX.
+          <small>doc_id + parse ok</small>
+        </div>
+        <div class="step">
+          <strong>2) Outline Review</strong>
+          Kiem tra outline/chunk.
+          <small>Continue -> Summary</small>
+        </div>
+        <div class="step">
+          <strong>3) Summary</strong>
+          Doc key points + citation.
+          <small>Click "Tao quiz"</small>
+        </div>
+        <div class="step">
+          <strong>4) Quiz</strong>
+          Lam bai va submit.
+          <small>Nhan score + review</small>
+        </div>
+        <div class="step">
+          <strong>5) Hint</strong>
+          Bi y -> mo hint L1/L2/L3.
+          <small>Khong dua dap an ngay</small>
+        </div>
+        <div class="step">
+          <strong>6) Feedback</strong>
+          Report/Edit neu thay sai.
+          <small>Luu learning signal</small>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Flow sat User Stories (3 lanes)</h2>
+      <div class="legend">
+        <span class="tag ok">Happy path</span>
+        <span class="tag warn">Low-confidence fallback</span>
+        <span class="tag no">Failure + Correction</span>
+      </div>
+
+      <div class="lane">
+        <h3>Lane A - Happy path</h3>
+        <div class="flowline">
+          <div class="node">S1 Upload ok</div>
+          <div class="node">S2 Outline dung</div>
+          <div class="node">S3 Summary ro + citation</div>
+          <div class="node">S4 Quiz lien quan</div>
+          <div class="node">S5 Hint huu ich</div>
+          <div class="node">S6 Hoan thanh + score</div>
+        </div>
+      </div>
+
+      <div class="lane">
+        <h3>Lane B - Low-confidence</h3>
+        <div class="flowline">
+          <div class="node">S1 Parse 1 phan khong chac</div>
+          <div class="node">S2 Canh bao vang + cho user sua</div>
+          <div class="node">S3 Summary gan nhan uncertain</div>
+          <div class="node">S4 Quiz co tag "tham khao"</div>
+          <div class="node">S5 Fallback ve doan goc</div>
+          <div class="node">S6 User tiep tuc hoc</div>
+        </div>
+      </div>
+
+      <div class="lane">
+        <h3>Lane C - Failure + correction</h3>
+        <div class="flowline">
+          <div class="node">S1 Parse fail/doi dinh dang</div>
+          <div class="node">S2 User edit outline sai</div>
+          <div class="node">S3 Bao summary sai</div>
+          <div class="node">S4 Bao cham quiz sai</div>
+          <div class="node">S5 Danh gia hint te</div>
+          <div class="node">S6 Report/Edit -> log</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Out-of-scope flow (deferred sau Hackathon)</h2>
+      <div class="cards6">
+        <article class="card">
+          <span class="status out">Deferred</span>
+          <h3>Chat Q&A end-to-end</h3>
+          <p class="muted">Flow chat da luot + context memory + citation day du de lam sau MVP.</p>
+        </article>
+        <article class="card">
+          <span class="status out">Deferred</span>
+          <h3>Advanced OCR branch</h3>
+          <p class="muted">Tien xu ly anh mo, cong thuc toan/phuong trinh phuc tap.</p>
+        </article>
+        <article class="card">
+          <span class="status out">Deferred</span>
+          <h3>Curriculum templates</h3>
+          <p class="muted">Flow chon lop/mon/chuong va rubric rieng theo chuong trinh.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>KPI block de demo theo eval metrics</h2>
+      <div class="kpi">
+        <article class="card">
+          <h3>GAR</h3>
+          <p class="muted">Muc tieu >= 85% (co grounding + citation hop le).</p>
+        </article>
+        <article class="card">
+          <h3>TSR @1-turn</h3>
+          <p class="muted">Muc tieu >= 70% (user giai quyet duoc nhu cau ngay luot dau).</p>
+        </article>
+        <article class="card">
+          <h3>P95 latency</h3>
+          <p class="muted">Muc tieu <= 3s cho luong ngan; xu ly file lon 5-10s.</p>
+        </article>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

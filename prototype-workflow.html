@@ -1,0 +1,1756 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Learning Co-pilot - Interactive Prototype</title>
+  <style>
+    :root { --bg:#f7f7f8; --panel:#fff; --line:#e5e7eb; --text:#111827; --muted:#6b7280; --brand:#10a37f; --brand-soft:#d1fae5; --user-bg:#eef2ff; --shadow:0 8px 24px rgba(0,0,0,.06); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,"Segoe UI",Arial,sans-serif; color:var(--text); background:var(--bg); }
+    .app { display:grid; grid-template-columns:280px 1fr; height:100vh; }
+    .sidebar { border-right:1px solid var(--line); background:#f3f4f6; display:flex; flex-direction:column; }
+    .side-head { padding:14px; border-bottom:1px solid var(--line); background:#fff; }
+    .title { margin:0; font-size:14px; font-weight:700; }
+    .subtitle { margin:4px 0 0; font-size:12px; color:var(--muted); }
+    .workflow-list { padding:10px; display:grid; gap:8px; overflow:auto; }
+    .step-btn { width:100%; text-align:left; border:1px solid var(--line); border-radius:10px; background:#fff; padding:10px; cursor:pointer; transition:.2s; font-size:12px; color:var(--muted); }
+    .step-btn strong { display:block; color:var(--text); font-size:13px; margin-bottom:2px; }
+    .step-btn:hover { border-color:#cbd5e1; }
+    .step-btn.active { border-color:#86efac; background:#f0fdf4; }
+    .side-foot { margin-top:auto; padding:10px; border-top:1px solid var(--line); background:#fff; font-size:12px; color:var(--muted); }
+    .main { display:grid; grid-template-rows:auto 1fr auto; min-width:0; }
+    .main-head { border-bottom:1px solid var(--line); padding:12px 18px; background:var(--panel); display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .main-head h1 { margin:0; font-size:16px; }
+    .badge { font-size:11px; font-weight:700; color:#065f46; background:var(--brand-soft); border:1px solid #a7f3d0; border-radius:999px; padding:4px 10px; }
+    .chat-wrap { overflow:auto; padding:18px; background:linear-gradient(180deg,#fff,#fafafa); }
+    .thread { max-width:880px; margin:0 auto; display:grid; gap:14px; }
+    .msg { display:grid; grid-template-columns:34px 1fr; gap:10px; align-items:start; }
+    .avatar { width:34px; height:34px; border-radius:10px; display:grid; place-items:center; font-size:12px; font-weight:700; border:1px solid var(--line); background:#fff; }
+    .avatar.user { background:#eef2ff; }
+    .avatar.ai { background:#ecfeff; }
+    .bubble { border:1px solid var(--line); border-radius:14px; padding:12px 13px; background:#fff; box-shadow:var(--shadow); }
+    .bubble.user { background:var(--user-bg); border-color:#c7d2fe; }
+    .bubble h3 { margin:0 0 6px; font-size:14px; }
+    .bubble p { margin:0; font-size:14px; line-height:1.5; }
+    .bubble ul { margin:8px 0 0; padding-left:18px; font-size:14px; line-height:1.5; }
+    .tools { max-width:880px; margin:16px auto 0; display:flex; gap:8px; flex-wrap:wrap; }
+    .tools button { border:1px solid var(--line); border-radius:999px; background:#fff; padding:7px 11px; font-size:12px; cursor:pointer; }
+    .tools button.primary { background:#111827; color:#fff; border-color:#111827; }
+    .composer { border-top:1px solid var(--line); background:#fff; padding:12px 16px; }
+    .composer-inner { max-width:900px; margin:0 auto; border:1px solid var(--line); border-radius:16px; padding:10px; background:#fff; display:grid; gap:8px; }
+    .prompt { width:100%; border:none; resize:none; min-height:54px; outline:none; font-size:14px; color:var(--text); font-family:inherit; }
+    .composer-actions { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .left-actions,.right-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .btn { border:1px solid var(--line); border-radius:10px; background:#fff; padding:6px 10px; font-size:12px; cursor:pointer; }
+    .btn.go { background:var(--brand); border-color:var(--brand); color:#fff; font-weight:700; }
+    @media (max-width:980px){ .app{grid-template-columns:1fr;} .sidebar{display:none;} .main-head h1{font-size:15px;} }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="side-head">
+        <p class="title">AI Learning Co-pilot</p>
+        <p class="subtitle">Interactive Prototype</p>
+      </div>
+      <div class="workflow-list" id="workflowList"></div>
+      <div class="side-foot">Fake data demo<br />Click step hoac Next de chuyen man</div>
+    </aside>
+
+    <main class="main">
+      <header class="main-head">
+        <h1 id="screenTitle">AI Learning Co-pilot - Interactive Prototype</h1>
+        <span class="badge" id="screenBadge">Step 1/6</span>
+      </header>
+      <section class="chat-wrap">
+        <div class="thread" id="thread"></div>
+        <div class="tools">
+          <button id="backBtn">Back</button>
+          <button id="replayBtn">Replay</button>
+          <button class="primary" id="nextBtn">Next</button>
+        </div>
+      </section>
+      <footer class="composer">
+        <div class="composer-inner">
+          <textarea class="prompt" id="promptBox" readonly></textarea>
+          <div class="composer-actions">
+            <div class="left-actions">
+              <button class="btn">+ Upload</button>
+              <button class="btn">Use template</button>
+            </div>
+            <div class="right-actions">
+              <button class="btn">Hint mode</button>
+              <button class="btn go">Send</button>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const steps = [
+      { name: "1. Upload", title: "Upload tai lieu va xu ly file", prompt: "Em upload file Toan12_Chuong3.pdf, giup em bat dau on tap nhe.", messages: [
+        { role: "user", html: "<p>Em upload file <strong>Toan12_Chuong3.pdf</strong>. Giup em on nhanh trong 15 phut.</p>" },
+        { role: "ai", html: "<h3>Da nhan tai lieu</h3><p>File PDF 42 trang da duoc parse thanh cong. <strong>doc_id: DOC-2026-0410-001</strong>.</p><ul><li>Trang thai: Ready</li><li>Nguon: PDF text + metadata trang</li></ul>" }
+      ]},
+      { name: "2. Review", title: "Review outline va low-confidence", prompt: "Cho em xem outline truoc khi tom tat.", messages: [
+        { role: "user", html: "<p>Cho em xem outline va bao cho em doan nao can kiem tra lai.</p>" },
+        { role: "ai", html: "<h3>Outline tai lieu</h3><ul><li>Chuong 1: Ham so</li><li>Chuong 2: Gioi han</li><li><strong>Chuong 3: Dao ham</strong></li><li>Chuong 4: Ung dung dao ham</li></ul><p>Co 2 doan cong thuc o trang 18-19 do tin cay thap. Ban co the sua nhanh neu can.</p>" }
+      ]},
+      { name: "3. Summary", title: "Tom tat noi dung + citation", prompt: "Tom tat chuong 3 theo dang key points + dien giai ngan gon.", messages: [
+        { role: "user", html: "<p>Tom tat chuong 3 cho em theo key points va de hieu.</p>" },
+        { role: "ai", html: "<h3>Summary (fake data)</h3><ul><li>Khai niem dao ham tai 1 diem</li><li>Quy tac dao ham co ban</li><li>Y nghia hinh hoc cua dao ham</li></ul><p><strong>Citation:</strong> chunk_31, chunk_37 (trang 14-18). Bam 'Xem doan goc' de doi chieu.</p>" }
+      ]},
+      { name: "4. Quiz", title: "Tao quiz va cham bai tu luan", prompt: "Tao quiz 5 cau tu summary, muc do trung binh-kha.", messages: [
+        { role: "user", html: "<p>Tao bo quiz 5 cau de em tu kiem tra.</p>" },
+        { role: "ai", html: "<h3>Quiz generated</h3><ul><li>C1: Dinh nghia dao ham tai x0</li><li>C2: Tinh dao ham f(x)=x^3-3x+2</li><li>C3: Neu y nghia hinh hoc cua f'(x)</li></ul><p>Ket qua cham fake hien tai: <strong>8.2/10</strong>. Goi y on lai phan y nghia hinh hoc.</p>" }
+      ]},
+      { name: "5. Hint", title: "Hint L1/L2/L3 theo kieu goi mo", prompt: "Em bi bi cau 3, cho em hint tang dan nhe.", messages: [
+        { role: "user", html: "<p>Em bi cau 3, cho em hint thay vi dap an truc tiep.</p>" },
+        { role: "ai", html: "<h3>Hint theo cap</h3><ul><li><strong>L1:</strong> Lien he dao ham voi do doc tiep tuyen.</li><li><strong>L2:</strong> Neu do thi tang thi f'(x) thuong co dau gi?</li><li><strong>L3:</strong> f'(x0) la he so goc tiep tuyen tai x0.</li></ul><p>Neu ban van chua chac, minh se fallback ve doan goc co citation.</p>" }
+      ]},
+      { name: "6. Feedback", title: "Tong ket va feedback/correction", prompt: "Cho em tong ket session va gui feedback.", messages: [
+        { role: "user", html: "<p>Cho em tong ket nhanh va tao feedback report cho phan em thay chua on.</p>" },
+        { role: "ai", html: "<h3>Session complete</h3><p>Final fake score: <strong>8.6/10</strong>. Ban can on them y nghia hinh hoc cua dao ham.</p><ul><li>Feedback log: FB-8821</li><li>Action: da luu correction vao learning store</li></ul><p>Cam on ban! He thong se hoc tu feedback nay.</p>" }
+      ]}
+    ];
+
+    let current = 0;
+    const workflowList = document.getElementById("workflowList");
+    const screenTitle = document.getElementById("screenTitle");
+    const screenBadge = document.getElementById("screenBadge");
+    const thread = document.getElementById("thread");
+    const promptBox = document.getElementById("promptBox");
+    const backBtn = document.getElementById("backBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const replayBtn = document.getElementById("replayBtn");
+
+    function renderSidebar() {
+      workflowList.innerHTML = "";
+      steps.forEach((step, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "step-btn" + (idx === current ? " active" : "");
+        btn.innerHTML = `<strong>${step.name}</strong>${step.title}`;
+        btn.onclick = () => { current = idx; render(); };
+        workflowList.appendChild(btn);
+      });
+    }
+
+    function renderThread() {
+      thread.innerHTML = "";
+      const step = steps[current];
+      step.messages.forEach((m) => {
+        const row = document.createElement("article");
+        row.className = "msg";
+        const avatar = document.createElement("div");
+        avatar.className = "avatar " + (m.role === "user" ? "user" : "ai");
+        avatar.textContent = m.role === "user" ? "U" : "AI";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble " + (m.role === "user" ? "user" : "");
+        bubble.innerHTML = m.html;
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+        thread.appendChild(row);
+      });
+    }
+
+    function renderTop() {
+      const step = steps[current];
+      screenTitle.textContent = "AI Learning Co-pilot - Interactive Prototype";
+      screenBadge.textContent = `Step ${current + 1}/${steps.length} - ${step.name}`;
+      promptBox.value = step.prompt;
+    }
+
+    function renderButtons() {
+      backBtn.disabled = current === 0;
+      nextBtn.textContent = current === steps.length - 1 ? "Finish" : "Next";
+    }
+
+    function render() {
+      renderSidebar();
+      renderTop();
+      renderThread();
+      renderButtons();
+    }
+
+    backBtn.onclick = () => { if (current > 0) { current -= 1; render(); } };
+    nextBtn.onclick = () => {
+      if (current < steps.length - 1) {
+        current += 1; render();
+      } else {
+        alert("Da demo xong workflow MVP. Bam Replay de xem lai.");
+      }
+    };
+    replayBtn.onclick = () => { current = 0; render(); };
+
+    render();
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Learning Co-pilot - Interactive Prototype</title>
+  <style>
+    :root {
+      --bg: #f7f7f8;
+      --panel: #ffffff;
+      --line: #e5e7eb;
+      --text: #111827;
+      --muted: #6b7280;
+      --brand: #10a37f;
+      --brand-soft: #d1fae5;
+      --user-bg: #eef2ff;
+      --assistant-bg: #ffffff;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      height: 100vh;
+    }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: #f3f4f6;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .side-head {
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .title {
+      font-size: 14px;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .subtitle {
+      margin: 4px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .workflow-list {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      overflow: auto;
+    }
+
+    .step-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 10px;
+      cursor: pointer;
+      transition: 0.2s;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .step-btn strong {
+      display: block;
+      color: var(--text);
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .step-btn:hover { border-color: #cbd5e1; }
+    .step-btn.active {
+      border-color: #86efac;
+      background: #f0fdf4;
+    }
+
+    .side-foot {
+      margin-top: auto;
+      padding: 10px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .main {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      min-width: 0;
+    }
+
+    .main-head {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 18px;
+      background: var(--panel);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .main-head h1 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      color: #065f46;
+      background: var(--brand-soft);
+      border: 1px solid #a7f3d0;
+      border-radius: 999px;
+      padding: 4px 10px;
+    }
+
+    .chat-wrap {
+      overflow: auto;
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff, #fafafa);
+    }
+
+    .thread {
+      max-width: 880px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+
+    .msg {
+      display: grid;
+      grid-template-columns: 34px 1fr;
+      gap: 10px;
+      align-items: start;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .avatar.user { background: #eef2ff; }
+    .avatar.ai { background: #ecfeff; }
+
+    .bubble {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 13px;
+      background: var(--assistant-bg);
+      box-shadow: var(--shadow);
+    }
+
+    .bubble.user {
+      background: var(--user-bg);
+      border-color: #c7d2fe;
+    }
+
+    .bubble h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .bubble p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .bubble ul {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .tools {
+      max-width: 880px;
+      margin: 16px auto 0;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .tools button {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      padding: 7px 11px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .tools button.primary {
+      background: #111827;
+      color: #fff;
+      border-color: #111827;
+    }
+
+    .composer {
+      border-top: 1px solid var(--line);
+      background: #fff;
+      padding: 12px 16px;
+    }
+
+    .composer-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 10px;
+      background: #fff;
+      display: grid;
+      gap: 8px;
+    }
+
+    .prompt {
+      width: 100%;
+      border: none;
+      resize: none;
+      min-height: 54px;
+      outline: none;
+      font-size: 14px;
+      color: var(--text);
+      font-family: inherit;
+    }
+
+    .composer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .left-actions, .right-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+      padding: 6px 10px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .btn.go {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    @media (max-width: 980px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main-head h1 { font-size: 15px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="side-head">
+        <p class="title">AI Learning Co-pilot</p>
+        <p class="subtitle">Interactive Prototype</p>
+      </div>
+      <div class="workflow-list" id="workflowList"></div>
+      <div class="side-foot">
+        Fake data demo<br />
+        Click step hoac Next de chuyen man
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="main-head">
+        <h1 id="screenTitle">AI Learning Co-pilot - Interactive Prototype</h1>
+        <span class="badge" id="screenBadge">Step 1/6</span>
+      </header>
+
+      <section class="chat-wrap">
+        <div class="thread" id="thread"></div>
+        <div class="tools">
+          <button id="backBtn">Back</button>
+          <button id="replayBtn">Replay</button>
+          <button class="primary" id="nextBtn">Next</button>
+        </div>
+      </section>
+
+      <footer class="composer">
+        <div class="composer-inner">
+          <textarea class="prompt" id="promptBox" readonly></textarea>
+          <div class="composer-actions">
+            <div class="left-actions">
+              <button class="btn">+ Upload</button>
+              <button class="btn">Use prompt template</button>
+            </div>
+            <div class="right-actions">
+              <button class="btn">Hint mode</button>
+              <button class="btn go">Send</button>
+            </div>
+          </div>
+        </div>
+      </footer>
+    </main>
+  </div>
+
+  <script>
+    const steps = [
+      {
+        name: "1. Upload",
+        title: "Upload tai lieu va xu ly file",
+        prompt: "Em upload file Toan12_Chuong3.pdf, giup em bat dau on tap nhe.",
+        messages: [
+          { role: "user", html: "<p>Em upload file <strong>Toan12_Chuong3.pdf</strong>. Giup em on nhanh trong 15 phut.</p>" },
+          { role: "ai", html: "<h3>Da nhan tai lieu</h3><p>File PDF 42 trang da duoc parse thanh cong. <strong>doc_id: DOC-2026-0410-001</strong>.</p><ul><li>Trang thai: Ready</li><li>Nguon: PDF text + metadata trang</li></ul>" }
+        ]
+      },
+      {
+        name: "2. Review",
+        title: "Review outline va low-confidence",
+        prompt: "Cho em xem outline truoc khi tom tat.",
+        messages: [
+          { role: "user", html: "<p>Cho em xem outline va bao cho em doan nao can kiem tra lai.</p>" },
+          { role: "ai", html: "<h3>Outline tai lieu</h3><ul><li>Chuong 1: Ham so</li><li>Chuong 2: Gioi han</li><li><strong>Chuong 3: Dao ham</strong></li><li>Chuong 4: Ung dung dao ham</li></ul><p>Co 2 doan cong thuc o trang 18-19 do tin cay thap. Ban co the sua nhanh neu can.</p>" }
+        ]
+      },
+      {
+        name: "3. Summary",
+        title: "Tom tat noi dung + citation",
+        prompt: "Tom tat chuong 3 theo dang key points + dien giai ngan gon.",
+        messages: [
+          { role: "user", html: "<p>Tom tat chuong 3 cho em theo key points va de hieu.</p>" },
+          { role: "ai", html: "<h3>Summary (fake data)</h3><ul><li>Khai niem dao ham tai 1 diem</li><li>Quy tac dao ham co ban</li><li>Y nghia hinh hoc cua dao ham</li></ul><p><strong>Citation:</strong> chunk_31, chunk_37 (trang 14-18). Bam 'Xem doan goc' de doi chieu.</p>" }
+        ]
+      },
+      {
+        name: "4. Quiz",
+        title: "Tao quiz va cham bai tu luan",
+        prompt: "Tao quiz 5 cau tu summary, muc do trung binh-kha.",
+        messages: [
+          { role: "user", html: "<p>Tao bo quiz 5 cau de em tu kiem tra.</p>" },
+          { role: "ai", html: "<h3>Quiz generated</h3><ul><li>C1: Dinh nghia dao ham tai x0</li><li>C2: Tinh dao ham f(x)=x^3-3x+2</li><li>C3: Neu y nghia hinh hoc cua f'(x)</li></ul><p>Ket qua cham fake hien tai: <strong>8.2/10</strong>. Goi y on lai phan y nghia hinh hoc.</p>" }
+        ]
+      },
+      {
+        name: "5. Hint",
+        title: "Hint L1/L2/L3 theo kieu goi mo",
+        prompt: "Em bi bi cau 3, cho em hint tang dan nhe.",
+        messages: [
+          { role: "user", html: "<p>Em bi cau 3, cho em hint thay vi dap an truc tiep.</p>" },
+          { role: "ai", html: "<h3>Hint theo cap</h3><ul><li><strong>L1:</strong> Lien he dao ham voi do doc tiep tuyen.</li><li><strong>L2:</strong> Neu do thi tang thi f'(x) thuong co dau gi?</li><li><strong>L3:</strong> f'(x0) la he so goc tiep tuyen tai x0.</li></ul><p>Neu ban van chua chac, minh se fallback ve doan goc co citation.</p>" }
+        ]
+      },
+      {
+        name: "6. Feedback",
+        title: "Tong ket va feedback/correction",
+        prompt: "Cho em tong ket session va gui feedback.",
+        messages: [
+          { role: "user", html: "<p>Cho em tong ket nhanh va tao feedback report cho phan em thay chua on.</p>" },
+          { role: "ai", html: "<h3>Session complete</h3><p>Final fake score: <strong>8.6/10</strong>. Ban can on them y nghia hinh hoc cua dao ham.</p><ul><li>Feedback log: FB-8821</li><li>Action: da luu correction vao learning store</li></ul><p>Cam on ban! He thong se hoc tu feedback nay.</p>" }
+        ]
+      }
+    ];
+
+    let current = 0;
+    const workflowList = document.getElementById("workflowList");
+    const screenTitle = document.getElementById("screenTitle");
+    const screenBadge = document.getElementById("screenBadge");
+    const thread = document.getElementById("thread");
+    const promptBox = document.getElementById("promptBox");
+    const backBtn = document.getElementById("backBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const replayBtn = document.getElementById("replayBtn");
+
+    function renderSidebar() {
+      workflowList.innerHTML = "";
+      steps.forEach((step, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "step-btn" + (idx === current ? " active" : "");
+        btn.innerHTML = `<strong>${step.name}</strong>${step.title}`;
+        btn.onclick = () => {
+          current = idx;
+          render();
+        };
+        workflowList.appendChild(btn);
+      });
+    }
+
+    function renderThread() {
+      thread.innerHTML = "";
+      const step = steps[current];
+      step.messages.forEach((m) => {
+        const row = document.createElement("article");
+        row.className = "msg";
+        const avatar = document.createElement("div");
+        avatar.className = "avatar " + (m.role === "user" ? "user" : "ai");
+        avatar.textContent = m.role === "user" ? "U" : "AI";
+        const bubble = document.createElement("div");
+        bubble.className = "bubble " + (m.role === "user" ? "user" : "");
+        bubble.innerHTML = m.html;
+        row.appendChild(avatar);
+        row.appendChild(bubble);
+        thread.appendChild(row);
+      });
+    }
+
+    function renderTop() {
+      const step = steps[current];
+      screenTitle.textContent = "AI Learning Co-pilot - Interactive Prototype";
+      screenBadge.textContent = `Step ${current + 1}/${steps.length} - ${step.name}`;
+      promptBox.value = step.prompt;
+    }
+
+    function renderButtons() {
+      backBtn.disabled = current === 0;
+      nextBtn.textContent = current === steps.length - 1 ? "Finish" : "Next";
+    }
+
+    function render() {
+      renderSidebar();
+      renderTop();
+      renderThread();
+      renderButtons();
+    }
+
+    backBtn.onclick = () => {
+      if (current > 0) {
+        current -= 1;
+        render();
+      }
+    };
+
+    nextBtn.onclick = () => {
+      if (current < steps.length - 1) {
+        current += 1;
+        render();
+      } else {
+        alert("Da demo xong workflow MVP. Bam Replay de xem lai.");
+      }
+    };
+
+    replayBtn.onclick = () => {
+      current = 0;
+      render();
+    };
+
+    render();
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Learning Co-pilot - Interactive Workflow Prototype</title>
+  <style>
+    :root {
+      --bg: #f3f6fc;
+      --card: #ffffff;
+      --line: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+      --primary: #2563eb;
+      --primary-soft: #dbeafe;
+      --ok: #0f766e;
+      --ok-soft: #ccfbf1;
+      --warn: #92400e;
+      --warn-soft: #ffedd5;
+      --danger: #991b1b;
+      --danger-soft: #fee2e2;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Inter", "Segoe UI", Arial, sans-serif;
+      background: radial-gradient(circle at top, #eef4ff, var(--bg) 44%);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .topbar {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .topbar h1 { margin: 0; font-size: 20px; }
+    .topbar p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+
+    .pill {
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 12px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .panel-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #f8fafc;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .workflow-nav {
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .step-item {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 9px 10px;
+      cursor: pointer;
+      background: #fff;
+      transition: 0.2s;
+    }
+    .step-item:hover { border-color: #cbd5e1; }
+    .step-item.active { background: var(--primary-soft); border-color: #93c5fd; }
+    .step-item.done { border-color: #99f6e4; background: #f0fdfa; }
+    .step-item strong { font-size: 13px; display: block; margin-bottom: 3px; }
+    .step-item small { color: var(--muted); font-size: 12px; line-height: 1.3; display: block; }
+
+    .stats {
+      border-top: 1px solid var(--line);
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .kpi {
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      font-size: 12px;
+      background: #fcfcff;
+    }
+    .kpi strong { display: block; color: var(--primary); margin-bottom: 2px; }
+
+    .main { display: grid; gap: 12px; }
+
+    .app-shell {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .app-header {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      background: #f8fafc;
+    }
+
+    .app-title { font-weight: 700; font-size: 14px; }
+
+    .badge {
+      font-size: 11px;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+    .b-core { color: var(--primary); background: var(--primary-soft); }
+    .b-ok { color: var(--ok); background: var(--ok-soft); }
+    .b-warn { color: var(--warn); background: var(--warn-soft); }
+    .b-danger { color: var(--danger); background: var(--danger-soft); }
+
+    .app-body {
+      padding: 14px;
+      min-height: 420px;
+      background: linear-gradient(180deg, #fff, #fdfdff);
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fff;
+    }
+    .card h3 { margin: 0 0 6px; font-size: 14px; }
+
+    .muted { color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .tiny { font-size: 12px; color: var(--muted); }
+
+    .list {
+      margin: 6px 0 0;
+      padding-left: 18px;
+      font-size: 13px;
+    }
+
+    .chat {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fafcff;
+      display: grid;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .msg {
+      max-width: 82%;
+      padding: 9px 10px;
+      border-radius: 10px;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+    .msg.user {
+      margin-left: auto;
+      background: var(--primary-soft);
+      border: 1px solid #bfdbfe;
+    }
+    .msg.ai {
+      background: #fff;
+      border: 1px solid var(--line);
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    button:hover { border-color: #cbd5e1; }
+
+    .btn-primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn-soft {
+      background: var(--primary-soft);
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .footer-bar {
+      border-top: 1px solid var(--line);
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      background: #f8fafc;
+    }
+
+    .progress { display: flex; gap: 6px; flex-wrap: wrap; }
+    .dot {
+      width: 22px;
+      height: 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+    }
+    .dot.active { background: #93c5fd; }
+    .dot.done { background: #5eead4; }
+
+    @media (max-width: 1024px) {
+      .layout { grid-template-columns: 1fr; }
+      .row { grid-template-columns: 1fr; }
+      .app-body { min-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="topbar">
+      <div>
+        <h1>AI Learning Co-pilot - Interactive Prototype</h1>
+        <p>Fake data demo cho chatbot tro ly hoc tap: click de di qua toan bo workflow core nghiep vu.</p>
+      </div>
+      <span class="pill">MVP Demo Mode</span>
+    </header>
+
+    <div class="layout">
+      <aside class="panel">
+        <div class="panel-head">Workflow Steps</div>
+        <div class="workflow-nav" id="stepList"></div>
+        <div class="stats">
+          <div class="kpi"><strong>GAR</strong><span>>= 85% (target)</span></div>
+          <div class="kpi"><strong>TSR</strong><span>>= 70% (target)</span></div>
+          <div class="kpi"><strong>P95</strong><span><= 3s luong ngan</span></div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <section class="app-shell">
+          <div class="app-header">
+            <div>
+              <div class="app-title" id="screenTitle">Screen title</div>
+              <div class="tiny" id="screenSubtitle">Screen subtitle</div>
+            </div>
+            <span class="badge b-core" id="screenBadge">Core</span>
+          </div>
+          <div class="app-body" id="screenBody"></div>
+          <div class="footer-bar">
+            <div class="progress" id="dots"></div>
+            <div class="actions">
+              <button id="backBtn">Back</button>
+              <button class="btn-soft" id="replayBtn">Replay</button>
+              <button class="btn-primary" id="nextBtn">Next step</button>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    const steps = [
+      {
+        title: "1) Upload Tai Lieu",
+        subtitle: "F1 - User upload PDF/DOCX, tao doc_id",
+        badge: { text: "MVP / Core", cls: "b-core" },
+        html: `
+          <div class="row">
+            <div class="card">
+              <h3>Upload Panel</h3>
+              <p class="muted">File da chon: <strong>Toan12_Chuong3.pdf</strong> (12.4MB)</p>
+              <ul class="list">
+                <li>Trang thai: Parsing 100% (fake)</li>
+                <li>Output: doc_id = DOC-2026-0410-001</li>
+                <li>Loai file: PDF, 42 trang</li>
+              </ul>
+              <div class="actions">
+                <button class="btn-primary">Upload now</button>
+                <button>Re-upload</button>
+              </div>
+            </div>
+            <div class="card">
+              <h3>Assistant Message</h3>
+              <div class="chat">
+                <div class="msg ai">Mình đã nhận tài liệu. Bắt đầu trích xuất cấu trúc chương/mục...</div>
+                <div class="msg ai">Hoàn tất parse. Bạn muốn xem outline trước khi tóm tắt không?</div>
+              </div>
+            </div>
+          </div>
+        `
+      },
+      {
+        title: "2) Review Outline",
+        subtitle: "Trust gate - low-confidence region canh bao",
+        badge: { text: "Trust Gate", cls: "b-warn" },
+        html: `
+          <div class="row">
+            <div class="card">
+              <h3>Document Outline</h3>
+              <ul class="list">
+                <li>Chuong 1: Ham so bac nhat</li>
+                <li>Chuong 2: Ham so bac hai</li>
+                <li><strong>Chuong 3: Dao ham</strong></li>
+                <li>Chuong 4: Ung dung dao ham</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Low-confidence Notice</h3>
+              <p class="muted">Phat hien 2 doan cong thuc OCR khong chac chan (trang 18, 19). Ban co the sua nhanh truoc khi tao summary.</p>
+              <div class="actions">
+                <button class="btn-soft">Edit uncertain text</button>
+                <button class="btn-primary">Continue anyway</button>
+              </div>
+            </div>
+          </div>
+          <div class="chat">
+            <div class="msg ai">Muc tieu la giam hallucination. Moi output sau se co citation de ban verify.</div>
+          </div>
+        `
+      },
+      {
+        title: "3) Summary + Citation",
+        subtitle: "F2 - key points, summary body, source links",
+        badge: { text: "MVP / Summary", cls: "b-core" },
+        html: `
+          <div class="chat">
+            <div class="msg user">Tom tat cho minh chuong 3, muc tieu on thi 15p.</div>
+            <div class="msg ai"><strong>Key points:</strong> (1) Khai niem dao ham, (2) Quy tac tinh dao ham, (3) Y nghia hinh hoc.<br><span class="tiny">Source: chunk_31, chunk_37</span></div>
+            <div class="msg ai"><strong>Summary:</strong> Dao ham do toc do bien thien tuc thoi... (fake content).<br><span class="tiny">Xem doan goc: p14-p18</span></div>
+          </div>
+          <div class="actions">
+            <button class="btn-primary">Tao quiz tu summary</button>
+            <button>Tom tat sau hon</button>
+            <button>Xem doan goc</button>
+          </div>
+        `
+      },
+      {
+        title: "4) Quiz Workspace",
+        subtitle: "F3 - tao cau hoi va cham bai tu luan",
+        badge: { text: "MVP / Quiz", cls: "b-core" },
+        html: `
+          <div class="row">
+            <div class="card">
+              <h3>Quiz (5 cau - fake data)</h3>
+              <ul class="list">
+                <li>C1. Dinh nghia dao ham tai 1 diem?</li>
+                <li>C2. Tinh dao ham cua f(x)=x^3-3x+2.</li>
+                <li>C3. Neu y nghia hinh hoc cua f'(x) trong do thi.</li>
+              </ul>
+              <p class="muted">Answer box (mock): "Dao ham tai x0 la gioi han..."</p>
+            </div>
+            <div class="card">
+              <h3>Grading Result</h3>
+              <p class="muted">Diem tam thoi: <strong>8.2/10</strong></p>
+              <ul class="list">
+                <li>Dung khai niem C1</li>
+                <li>Thieu dien giai hinh hoc o C3</li>
+                <li>Goi y on lai trang 16</li>
+              </ul>
+            </div>
+          </div>
+          <div class="actions">
+            <button class="btn-primary">Submit quiz</button>
+            <button>Lam lai cau sai</button>
+          </div>
+        `
+      },
+      {
+        title: "5) Hint Drawer (L1/L2/L3)",
+        subtitle: "F4 - goi y tang dan, khong lo dap an ngay",
+        badge: { text: "MVP / Hint", cls: "b-ok" },
+        html: `
+          <div class="chat">
+            <div class="msg user">Mình bí câu 3, cho hint nhé.</div>
+            <div class="msg ai"><strong>Hint L1:</strong> Hay lien he dao ham voi do doc tiep tuyen.</div>
+            <div class="msg ai"><strong>Hint L2:</strong> Neu do thi tang nhanh, gia tri f'(x) co dau gi?</div>
+            <div class="msg ai"><strong>Hint L3:</strong> Thu viet theo "f'(x0) = he so goc tiep tuyen tai x0".</div>
+          </div>
+          <div class="actions">
+            <button>Hint L1</button>
+            <button>Hint L2</button>
+            <button>Hint L3</button>
+            <button class="btn-soft">Fallback to citation</button>
+          </div>
+        `
+      },
+      {
+        title: "6) Result + Feedback/Correction",
+        subtitle: "Report/Edit + learning signal cho he thong",
+        badge: { text: "Learning Loop", cls: "b-danger" },
+        html: `
+          <div class="row">
+            <div class="card">
+              <h3>Session Result</h3>
+              <p class="muted">Final score: <strong>8.6/10</strong> | Completion: 100%</p>
+              <ul class="list">
+                <li>Strong: dinh nghia, quy tac dao ham</li>
+                <li>Need improve: y nghia hinh hoc</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Feedback Panel</h3>
+              <p class="muted">Ban co the bao summary/quiz/hint sai va de xuat sua.</p>
+              <div class="actions">
+                <button class="btn-primary">Report/Edit</button>
+                <button>Like</button>
+                <button>Dislike</button>
+              </div>
+              <p class="tiny">Log fake: feedback_id FB-8821 da luu vao correction store.</p>
+            </div>
+          </div>
+          <div class="chat">
+            <div class="msg ai">Cam on ban! He thong se dung feedback nay de giam loi lap lai cho cac lan sau.</div>
+          </div>
+        `
+      }
+    ];
+
+    let current = 0;
+    let visited = new Set([0]);
+
+    const stepList = document.getElementById("stepList");
+    const dots = document.getElementById("dots");
+    const screenTitle = document.getElementById("screenTitle");
+    const screenSubtitle = document.getElementById("screenSubtitle");
+    const screenBadge = document.getElementById("screenBadge");
+    const screenBody = document.getElementById("screenBody");
+    const backBtn = document.getElementById("backBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const replayBtn = document.getElementById("replayBtn");
+
+    function renderNav() {
+      stepList.innerHTML = "";
+      steps.forEach((s, idx) => {
+        const el = document.createElement("div");
+        el.className = "step-item";
+        if (idx === current) el.classList.add("active");
+        if (visited.has(idx) && idx !== current) el.classList.add("done");
+        el.innerHTML = `<strong>${s.title}</strong><small>${s.subtitle}</small>`;
+        el.onclick = () => {
+          current = idx;
+          visited.add(idx);
+          render();
+        };
+        stepList.appendChild(el);
+      });
+    }
+
+    function renderDots() {
+      dots.innerHTML = "";
+      steps.forEach((_, idx) => {
+        const d = document.createElement("div");
+        d.className = "dot";
+        if (idx === current) d.classList.add("active");
+        if (visited.has(idx) && idx < current) d.classList.add("done");
+        dots.appendChild(d);
+      });
+    }
+
+    function renderScreen() {
+      const s = steps[current];
+      screenTitle.textContent = s.title;
+      screenSubtitle.textContent = s.subtitle;
+      screenBadge.textContent = s.badge.text;
+      screenBadge.className = `badge ${s.badge.cls}`;
+      screenBody.innerHTML = s.html;
+    }
+
+    function renderButtons() {
+      backBtn.disabled = current === 0;
+      nextBtn.textContent = current === steps.length - 1 ? "Finish demo" : "Next step";
+    }
+
+    function render() {
+      renderNav();
+      renderDots();
+      renderScreen();
+      renderButtons();
+    }
+
+    backBtn.onclick = () => {
+      if (current > 0) {
+        current -= 1;
+        visited.add(current);
+        render();
+      }
+    };
+
+    nextBtn.onclick = () => {
+      if (current < steps.length - 1) {
+        current += 1;
+        visited.add(current);
+        render();
+      } else {
+        alert("Da di het workflow MVP. Ban co the bam Replay de demo lai.");
+      }
+    };
+
+    replayBtn.onclick = () => {
+      current = 0;
+      visited = new Set([0]);
+      render();
+    };
+
+    render();
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prototype Workflow - AI Learning Co-pilot</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --blue: #2563eb;
+      --blue-soft: #dbeafe;
+      --green: #0f766e;
+      --green-soft: #ccfbf1;
+      --amber: #92400e;
+      --amber-soft: #ffedd5;
+      --red: #991b1b;
+      --red-soft: #fee2e2;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1d4ed8, #2563eb);
+      color: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero h1 {
+      margin: 0 0 6px;
+      font-size: 30px;
+    }
+
+    .hero p {
+      margin: 0;
+      opacity: 0.95;
+    }
+
+    .legend {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .pill {
+      font-size: 12px;
+      font-weight: 700;
+      border-radius: 999px;
+      padding: 4px 10px;
+      border: 1px solid transparent;
+    }
+
+    .pill.core { background: var(--blue-soft); color: var(--blue); }
+    .pill.ok { background: var(--green-soft); color: var(--green); }
+    .pill.warn { background: var(--amber-soft); color: var(--amber); }
+    .pill.err { background: var(--red-soft); color: var(--red); }
+
+    .section {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+      margin-bottom: 14px;
+    }
+
+    .section h2 {
+      margin: 0 0 12px;
+      font-size: 21px;
+    }
+
+    .workflow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .node {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      min-height: 120px;
+      background: #fff;
+      position: relative;
+    }
+
+    .node h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: var(--blue);
+    }
+
+    .node p {
+      margin: 0 0 8px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .arrow {
+      text-align: center;
+      font-weight: 700;
+      color: #94a3b8;
+      margin-top: 4px;
+      margin-bottom: 2px;
+    }
+
+    .screen-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .screen {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .screen-head {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .badge {
+      font-size: 11px;
+      padding: 3px 7px;
+      border-radius: 999px;
+      font-weight: 700;
+    }
+
+    .badge.mvp { color: var(--green); background: var(--green-soft); }
+    .badge.core { color: var(--blue); background: var(--blue-soft); }
+    .badge.warn { color: var(--amber); background: var(--amber-soft); }
+
+    .screen-body {
+      padding: 12px;
+      font-size: 13px;
+    }
+
+    .mini {
+      border: 1px dashed #cbd5e1;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 8px;
+      background: #fcfdff;
+    }
+
+    .mini strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 12px;
+      color: #334155;
+    }
+
+    .btns {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 7px;
+      padding: 4px 8px;
+      font-size: 12px;
+      cursor: default;
+    }
+
+    .btn-primary {
+      color: #fff;
+      background: var(--blue);
+      border-color: var(--blue);
+    }
+
+    .lanes {
+      display: grid;
+      gap: 10px;
+    }
+
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fcfcfd;
+    }
+
+    .lane h3 {
+      margin: 0 0 8px;
+      font-size: 15px;
+    }
+
+    .lane-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .chip {
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      border: 1px dashed #cbd5e1;
+      background: #fff;
+      min-height: 54px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .metric h4 {
+      margin: 0 0 4px;
+      color: var(--blue);
+    }
+
+    .metric p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    @media (max-width: 1024px) {
+      .workflow,
+      .lane-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .screen-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .workflow,
+      .lane-grid,
+      .metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <h1>Prototype Workflow - Core Nghiep Vu</h1>
+      <p>Demo giao dien/chuc nang ung dung theo luong MVP: Upload -> Review -> Summary -> Quiz -> Hint -> Feedback.</p>
+      <div class="legend">
+        <span class="pill core">Core business flow</span>
+        <span class="pill ok">Happy path</span>
+        <span class="pill warn">Low-confidence fallback</span>
+        <span class="pill err">Failure + correction</span>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>1) Workflow Core (E2E)</h2>
+      <div class="workflow">
+        <article class="node">
+          <h3>S1. Upload Tai Lieu</h3>
+          <p>User tai PDF/DOCX, he thong parse va tao doc_id.</p>
+          <span class="badge core">F1</span>
+        </article>
+        <article class="node">
+          <h3>S2. Review Outline</h3>
+          <p>Hien outline/chunk preview, canh bao neu parse chua chac.</p>
+          <span class="badge core">Trust Gate</span>
+        </article>
+        <article class="node">
+          <h3>S3. Summary + Citation</h3>
+          <p>Key points + summary body + link Xem doan goc.</p>
+          <span class="badge core">F2</span>
+        </article>
+        <article class="node">
+          <h3>S4. Quiz Workspace</h3>
+          <p>Tao 5-10 cau hoi, nhap cau tra loi, cham va nhan xet.</p>
+          <span class="badge core">F3</span>
+        </article>
+        <article class="node">
+          <h3>S5. Hint L1/L2/L3</h3>
+          <p>Nhan goi y tang dan, fallback citation khi khong chac.</p>
+          <span class="badge core">F4</span>
+        </article>
+        <article class="node">
+          <h3>S6. Feedback/Correction</h3>
+          <p>Report/Edit + thumbs, ghi log de cai thien GAR/TSR.</p>
+          <span class="badge core">Learning Loop</span>
+        </article>
+      </div>
+      <div class="arrow">S1 -> S2 -> S3 -> S4 -> S5 -> S6</div>
+    </section>
+
+    <section class="section">
+      <h2>2) Demo Screen Prototype (6 man hinh)</h2>
+      <div class="screen-grid">
+        <article class="screen">
+          <div class="screen-head">
+            <span>Screen 1 - Upload</span>
+            <span class="badge mvp">MVP</span>
+          </div>
+          <div class="screen-body">
+            <div class="mini">
+              <strong>Dropzone</strong>
+              Keo tha file PDF/DOCX, hien progress.
+            </div>
+            <div class="mini">
+              <strong>Validation</strong>
+              Kiem tra format, kich thuoc, parse status.
+            </div>
+            <div class="btns">
+              <button class="btn-primary">Upload now</button>
+              <button>Retry</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-head">
+            <span>Screen 2 - Outline Review</span>
+            <span class="badge warn">Trust</span>
+          </div>
+          <div class="screen-body">
+            <div class="mini">
+              <strong>Outline tree</strong>
+              Chapter / section / chunk preview.
+            </div>
+            <div class="mini">
+              <strong>Low-confidence panel</strong>
+              Highlight doan uncertain + cho sua nhanh.
+            </div>
+            <div class="btns">
+              <button class="btn-primary">Continue</button>
+              <button>Edit outline</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-head">
+            <span>Screen 3 - Summary</span>
+            <span class="badge mvp">MVP</span>
+          </div>
+          <div class="screen-body">
+            <div class="mini">
+              <strong>Key Points</strong>
+              3-5 y chinh gon va de nho.
+            </div>
+            <div class="mini">
+              <strong>Citation</strong>
+              Source chunk ids + nut Xem doan goc.
+            </div>
+            <div class="btns">
+              <button class="btn-primary">Tao quiz</button>
+              <button>Tom tat sau hon</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-head">
+            <span>Screen 4 - Quiz Workspace</span>
+            <span class="badge mvp">MVP</span>
+          </div>
+          <div class="screen-body">
+            <div class="mini">
+              <strong>Question list</strong>
+              5-10 cau hoi theo scope/chapter.
+            </div>
+            <div class="mini">
+              <strong>Answer + Grading</strong>
+              Text answer, submit, nhan score + review.
+            </div>
+            <div class="btns">
+              <button class="btn-primary">Submit quiz</button>
+              <button>Save draft</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-head">
+            <span>Screen 5 - Hint Drawer</span>
+            <span class="badge mvp">MVP</span>
+          </div>
+          <div class="screen-body">
+            <div class="mini">
+              <strong>Hint levels</strong>
+              L1 goi huong -> L2 thu hep -> L3 gan dap an.
+            </div>
+            <div class="mini">
+              <strong>Fallback</strong>
+              Neu AI khong chac: tra ve doan goc co lien quan.
+            </div>
+            <div class="btns">
+              <button>Hint L1</button>
+              <button>Hint L2</button>
+              <button>Hint L3</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="screen">
+          <div class="screen-head">
+            <span>Screen 6 - Result + Feedback</span>
+            <span class="badge mvp">MVP</span>
+          </div>
+          <div class="screen-body">
+            <div class="mini">
+              <strong>Result panel</strong>
+              Tong diem, cau sai, recommendation hoc lai.
+            </div>
+            <div class="mini">
+              <strong>Correction actions</strong>
+              Report/Edit, thumbs up/down, ghi chu loi.
+            </div>
+            <div class="btns">
+              <button class="btn-primary">Report/Edit</button>
+              <button>Like</button>
+              <button>Dislike</button>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>3) Workflow theo tinh huong nghiep vu</h2>
+      <div class="lanes">
+        <article class="lane">
+          <h3><span class="pill ok">Happy path</span></h3>
+          <div class="lane-grid">
+            <div class="chip">Upload thanh cong</div>
+            <div class="chip">Outline dung</div>
+            <div class="chip">Summary ro + citation</div>
+            <div class="chip">Quiz dung muc do</div>
+            <div class="chip">Hint huu ich</div>
+            <div class="chip">Feedback tich cuc</div>
+          </div>
+        </article>
+
+        <article class="lane">
+          <h3><span class="pill warn">Low-confidence fallback</span></h3>
+          <div class="lane-grid">
+            <div class="chip">Parse mot phan mo</div>
+            <div class="chip">Canh bao vang + cho sua</div>
+            <div class="chip">Summary gan nhan uncertain</div>
+            <div class="chip">Quiz tag "tham khao"</div>
+            <div class="chip">Hint fallback citation</div>
+            <div class="chip">User tiep tuc hoc an toan</div>
+          </div>
+        </article>
+
+        <article class="lane">
+          <h3><span class="pill err">Failure + correction</span></h3>
+          <div class="lane-grid">
+            <div class="chip">Upload fail / parse fail</div>
+            <div class="chip">User edit source sai</div>
+            <div class="chip">Report summary sai</div>
+            <div class="chip">Report cham quiz sai</div>
+            <div class="chip">Dislike hint sai huong</div>
+            <div class="chip">Log correction -> improve</div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>4) KPI widget trong demo app</h2>
+      <div class="metrics">
+        <article class="metric">
+          <h4>GAR >= 85%</h4>
+          <p>Do tin cay grounding: dung tai lieu + citation hop le.</p>
+        </article>
+        <article class="metric">
+          <h4>TSR >= 70%</h4>
+          <p>User giai quyet duoc nhu cau ngay luot dau.</p>
+        </article>
+        <article class="metric">
+          <h4>P95 <= 3s</h4>
+          <p>Trai nghiem nhanh cho luong ngan; file lon 5-10 giay.</p>
+        </article>
+      </div>
+      <p class="footer-note">Out-of-scope hien tai: Chat Q&A full, advanced OCR, curriculum template builder.</p>
+    </section>
+  </div>
+</body>
+</html>
