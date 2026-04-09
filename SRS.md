@@ -10,7 +10,9 @@ Tài liệu này mô tả yêu cầu phần mềm cho hệ thống AI Learning C
 
 Hệ thống cho phép người dùng:
 
-- Upload tài liệu học tập (`PDF`, `DOCX`)
+- Điều hướng theo **Day** (buổi học), xem danh sách **tài liệu** trong từng Day, và **xem tài liệu** (PDF, slide, ảnh, …) trên vùng chính
+- Mở **trợ lý AI** dạng **popup chat** (nút floating góc dưới phải), trò chuyện có **ngữ cảnh** theo Day và tài liệu đang mở
+- Xử lý và truy vấn nội dung tài liệu học tập (`PDF`, `DOCX`, và các định dạng viewer hỗ trợ trong MVP)
 - Nhận tóm tắt có cấu trúc
 - Làm quiz tự luận
 - Nhận hint nhiều cấp độ
@@ -22,6 +24,8 @@ Hệ thống cho phép người dùng:
 - **TSR:** Task Success @1-turn
 - **RAG:** Retrieval-Augmented Generation
 - **Hint L1/L2/L3:** Mức gợi ý tăng dần
+- **Day:** Một buổi học hoặc một đơn vị tổ chức tài liệu (Day 01, Day 02, …)
+- **Viewer:** Vùng hiển thị nội dung tài liệu (PDF/slide/ảnh) trên màn hình chính
 
 ---
 
@@ -29,11 +33,11 @@ Hệ thống cho phép người dùng:
 
 ### 2.1 Product perspective
 
-Sản phẩm là web app gồm frontend, backend API, và AI/RAG pipeline. Dữ liệu tài liệu được parse, chunk, embed và truy xuất phục vụ sinh nội dung học tập có grounding.
+Sản phẩm là **module nhúng trong hệ thống học tập (LMS)** hoặc trang khóa học: gồm frontend, backend API, và AI/RAG pipeline. Người học làm việc trong ngữ cảnh **Day + tài liệu đang xem**; trợ lý AI hiển thị dạng **widget chat** (mở/đóng popup), không chiếm toàn màn mặc định. Dữ liệu tài liệu được parse, chunk, embed và truy xuất theo **tài liệu/Day** phục vụ sinh nội dung học tập có grounding.
 
 ### 2.2 User classes
 
-- **Student user:** Upload tài liệu, học bằng summary/quiz/hint, gửi feedback.
+- **Student user:** Chọn Day và tài liệu, xem viewer, mở popup chat, dùng summary/quiz/hint, gửi feedback.
 - **Admin/mentor (tùy chọn pilot):** Theo dõi lỗi lặp và chất lượng hệ thống.
 
 ### 2.3 Operating environment
@@ -54,11 +58,30 @@ Sản phẩm là web app gồm frontend, backend API, và AI/RAG pipeline. Dữ 
 
 ## 3. External interface requirements
 
-### 3.1 User interface
+### 3.1 User interface — tổng quan
 
-- Trang upload file và hiển thị trạng thái xử lý
-- Trang summary có citation
-- Trang quiz tự luận (nhập câu trả lời + xem chấm điểm)
+Giao diện gồm: điều hướng Day, danh sách tài liệu, viewer, và widget chat popup; các chức năng tóm tắt/quiz/hint có thể nằm trong popup hoặc panel liên kết với ngữ cảnh tài liệu.
+
+### 3.1.1 Điều hướng theo Day và danh sách tài liệu
+
+- Thanh/tab bên trái: **Day 01 … Day N** (hoặc tương đương)
+- Trong mỗi Day: danh sách tài liệu (slide, PDF, PNG, …); người dùng chọn một mục để mở viewer
+
+### 3.1.2 Document viewer
+
+- Vùng nội dung chính hiển thị tài liệu đã chọn theo loại (PDF, slide, ảnh)
+- Trạng thái tải/lỗi hiển thị rõ ràng khi không mở được tài liệu
+
+### 3.1.3 Widget chat (popup)
+
+- Nút điều khiển **góc dưới bên phải**; trạng thái mặc định: **đóng**
+- Khi mở: hiển thị hộp thoại/panel chat; tin nhắn gửi trong ngữ cảnh **Day hiện tại** và **document_id** (tài liệu đang xem)
+- Có thể đóng/thu nhỏ popup để xem lại viewer
+
+### 3.1.4 Luồng học tập (summary, quiz, hint, feedback)
+
+- Summary có citation
+- Quiz tự luận (nhập câu trả lời + xem chấm điểm)
 - Nút hint theo cấp độ
 - Nút feedback/report ở các điểm chính
 
@@ -77,6 +100,14 @@ Sản phẩm là web app gồm frontend, backend API, và AI/RAG pipeline. Dữ 
 ---
 
 ## 4. System features and functional requirements
+
+### 4.0 Feature Z — LMS shell (Day, viewer, popup chat)
+
+- `REQ-FUNC-020`: Hệ thống phải cho phép người dùng chọn một **Day** và xem danh sách **tài liệu** thuộc Day đó.
+- `REQ-FUNC-021`: Khi người dùng chọn một tài liệu, hệ thống phải hiển thị nội dung trong **viewer** tương ứng loại tệp (tối thiểu PDF; slide/ảnh theo khả năng MVP).
+- `REQ-FUNC-022`: Hệ thống phải cung cấp **widget chat** ở góc dưới bên phải; mặc định đóng; bấm để mở **popup/panel** chat.
+- `REQ-FUNC-023`: Mọi yêu cầu tới AI trong popup chat phải gắn ngữ cảnh **Day đang chọn** và **tài liệu đang mở** (khi có).
+- `REQ-FUNC-024`: Khi đổi Day hoặc đổi tài liệu, giao diện phải cập nhật viewer; ngữ cảnh chat phải đồng bộ hoặc thông báo rõ cho người dùng.
 
 ### 4.1 Feature A — Document Upload and Processing
 
@@ -144,11 +175,17 @@ Sản phẩm là web app gồm frontend, backend API, và AI/RAG pipeline. Dữ 
 
 - `REQ-NFR-010`: Cost trung bình mục tiêu <= $0.02/query (theo tuần).
 
+### 5.6 User experience (widget và viewer)
+
+- `REQ-NFR-011`: Popup chat khi thu nhỏ/đóng không được che khuất hoàn toàn viewer; người dùng có thể tiếp tục đọc tài liệu.
+- `REQ-NFR-012`: Hành vi đóng/mở popup phải có nhãn hoặc control rõ ràng (nút đóng, hoặc bấm lại nút floating).
+
 ---
 
 ## 6. Acceptance criteria
 
-- `AC-001`: User upload tài liệu và nhận được summary có citation.
+- `AC-000`: Người dùng chọn Day, chọn tài liệu, thấy nội dung trong viewer; mở popup chat và gửi ít nhất một tin nhắn có ngữ cảnh.
+- `AC-001`: User nhận được summary có citation từ tài liệu đang mở (hoặc đã xử lý trong Day).
 - `AC-002`: User tạo quiz và nhận được >=5 câu hỏi liên quan tài liệu.
 - `AC-003`: User dùng hint 3 cấp trên ít nhất 1 câu quiz.
 - `AC-004`: User gửi feedback report/edit thành công.
@@ -175,6 +212,6 @@ Sản phẩm là web app gồm frontend, backend API, và AI/RAG pipeline. Dữ 
 
 ## 9. Future requirements (post-MVP)
 
-- Thêm Chat Q&A (F5) với grounding đầy đủ.
+- Thêm Chat Q&A **toàn hệ thống** hoặc đa tài liệu không gắn một viewer cố định (mở rộng ngoài popup ngữ cảnh).
 - Hệ thống review tự động cho lỗi lặp từ feedback logs.
 - Tăng mức bảo mật và quản trị người dùng khi triển khai rộng.
