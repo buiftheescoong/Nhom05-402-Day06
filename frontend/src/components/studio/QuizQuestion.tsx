@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Lightbulb, Send, Loader2, CheckCircle2, XCircle, Flag } from "lucide-react";
+import { Lightbulb, Send, Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/api";
 import { useSessionStore } from "@/hooks/useSession";
+import { FeedbackWidget } from "@/components/feedback/FeedbackWidget";
 import type { QuizQuestion as QuizQuestionType, QuizEvaluation, HintData } from "@/types";
 
 interface QuizQuestionProps {
@@ -199,17 +200,9 @@ export function QuizQuestion({ question, index, isActive, result, onResult, onFo
             </div>
           )}
 
-          {/* Report */}
+          {/* Feedback */}
           <div className="flex justify-end">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-[10px] text-stone-400 gap-1 h-6"
-              onClick={() => api.feedback.submit("quiz", question.id, "report").catch(() => {})}
-            >
-              <Flag className="w-2.5 h-2.5" />
-              Báo lỗi
-            </Button>
+            <FeedbackWidget targetType="quiz_question" targetId={question.id} compact />
           </div>
         </div>
       )}

@@ -180,9 +180,11 @@ class FeedbackLog(Base):
     __tablename__ = "feedback_log"
 
     id = Column(String, primary_key=True, default=_new_id)
-    target_type = Column(String, nullable=False)  # summary | quiz | hint | chat
+    target_type = Column(String, nullable=False)  # summary | quiz | quiz_question | hint | chat
     target_id = Column(String, nullable=False)
+    student_id = Column(String, ForeignKey("students.id"), nullable=True)
     feedback_type = Column(String, nullable=False)  # like | dislike | report
+    category = Column(String, default="")  # report sub-category
     user_note = Column(Text, default="")
     created_at = Column(DateTime, default=_utcnow)
 

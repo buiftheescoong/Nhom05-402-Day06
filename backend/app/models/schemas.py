@@ -173,5 +173,27 @@ class ChatResponse(BaseModel):
 class FeedbackRequest(BaseModel):
     target_type: str
     target_id: str
-    feedback_type: str
+    feedback_type: str  # like | dislike | report
+    student_id: str | None = None
+    category: str = ""
     user_note: str = ""
+
+
+class FeedbackResponse(BaseModel):
+    id: str
+    target_type: str
+    target_id: str
+    student_id: str | None
+    feedback_type: str
+    category: str
+    user_note: str
+    created_at: datetime
+
+
+class FeedbackStatsResponse(BaseModel):
+    target_type: str
+    target_id: str
+    likes: int = 0
+    dislikes: int = 0
+    reports: int = 0
+    total: int = 0
