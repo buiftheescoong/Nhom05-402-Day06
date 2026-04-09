@@ -156,6 +156,51 @@ export const api = {
           message,
         }),
       }),
+    sendStream: async (
+      sessionId: string,
+      message: string,
+      studentId: string | undefined,
+      onChunk: (chunk: string) => void
+    ) => {
+      const res = await fetch(`${API_BASE}/api/chat/stream`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          student_id: studentId,
+          message,
+        }),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const reader = res.body?.getReader();
+      if (!reader) throw new Error("No reader");
+      const decoder = new TextDecoder("utf-8");
+      
+      let done = false;
+      let finalSources = [];
+      let fullContent = "";
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: !done });
+          const lines = chunk.split('\n\n');
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+               try {
+                   const data = JSON.parse(line.slice(6));
+                   if (data.content !== undefined) {
+                       fullContent += data.content;
+                       onChunk(fullContent);
+                   }
+                   if (data.sources) finalSources = data.sources;
+               } catch (e) {}
+            }
+          }
+        }
+      }
+      return { content: fullContent, sources: finalSources };
+    },
     history: (sessionId: string, studentId?: string) =>
       request<any[]>(
         `/api/chat/history/${sessionId}${studentId ? `?student_id=${studentId}` : ""}`
